@@ -17,7 +17,14 @@ export type LookExtra =
   | 'glowHands'
   | 'belt'
   | 'rocks'
-  | 'gem';
+  | 'gem'
+  | 'potHelmet'
+  | 'scarf'
+  | 'snout'
+  | 'roundEars'
+  | 'cap'
+  | 'headphones'
+  | 'boombox';
 
 export interface CharacterLook {
   skin: number;
@@ -35,4 +42,6 @@ export interface CharacterLook {
   /** Largura do corpo (1 = normal). */
   bulk: number;
   extras: LookExtra[];
+  /** Corpo semitransparente (gelatina, fantasma…). */
+  translucent?: boolean;
 }

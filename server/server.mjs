@@ -100,6 +100,11 @@ export function startServer(port = Number(process.env.PORT ?? 8787)) {
     });
 
     ws.on('close', () => leave(ws));
+    // Erro de um cliente (ex.: mensagem grande demais) derruba só a conexão dele.
+    ws.on('error', () => {
+      leave(ws);
+      ws.terminate();
+    });
   });
 
   // Derruba conexões mortas e salas esquecidas.

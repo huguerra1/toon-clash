@@ -146,10 +146,19 @@ export class App {
     this.tickCount++;
     const events = this.controls.pollMenu();
     if (this.paused) {
-      for (const e of events) this.paused.handle(e);
+      // A pausa pode fechar no meio da lista (ex.: os dois jogadores confirmam juntos).
+      for (const e of events) {
+        if (!this.paused) break;
+        this.paused.handle(e);
+      }
       return;
     }
-    for (const e of events) this.screen?.handle?.(e);
+    const screen = this.screen;
+    for (const e of events) {
+      // Se um evento trocou de tela, os seguintes não vão para a tela nova.
+      if (this.screen !== screen || this.paused) break;
+      screen?.handle?.(e);
+    }
     this.screen?.tick?.();
   }
 
@@ -240,6 +249,8 @@ export class App {
     mode: Mode,
     level: CpuLevel = 'medio',
     onDone?: (chars: [CharacterId, CharacterId]) => void,
+    /** Chamado ao sair da seleção sem escolher (padrão: volta ao menu). */
+    onCancel: () => void = () => this.show(this.mainMenu()),
   ): Screen {
     this.audio.playMusic('menu');
     const roster = this.roster;
@@ -344,7 +355,7 @@ export class App {
         locked[0] = false;
       } else {
         this.sounds.back();
-        this.show(this.mainMenu());
+        onCancel();
         return;
       }
       this.sounds.back();
@@ -449,7 +460,8 @@ export class App {
       const j = Math.floor(Math.random() * (i + 1));
       [others[i], others[j]] = [others[j]!, others[i]!];
     }
-    const opponents: CharacterId[] = [...others, 'zhaar'];
+    // 6 lutas sorteadas + o chefe, para o arcade não ficar longo demais com o elenco grande.
+    const opponents: CharacterId[] = [...others.slice(0, 6), 'zhaar'];
     this.session = {
       mode: 'arcade',
       characters: [player, opponents[0]!],

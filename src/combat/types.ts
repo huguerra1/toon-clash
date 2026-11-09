@@ -109,7 +109,17 @@ export interface FormDef {
 }
 
 export type ToonalityKind =
-  'shrink' | 'blocks' | 'portal' | 'anvil' | 'star' | 'stampede' | 'trophy';
+  | 'shrink'
+  | 'blocks'
+  | 'portal'
+  | 'anvil'
+  | 'star'
+  | 'stampede'
+  | 'trophy'
+  | 'pie'
+  | 'jelly'
+  | 'pixel'
+  | 'speaker';
 
 export interface ToonalityDef {
   name: string;
@@ -118,7 +128,18 @@ export interface ToonalityDef {
   kind: ToonalityKind;
 }
 
-export type CharacterId = 'kai' | 'nyx' | 'umbra' | 'ferrum' | 'solara' | 'feral' | 'zhaar';
+export type CharacterId =
+  | 'kai'
+  | 'nyx'
+  | 'umbra'
+  | 'ferrum'
+  | 'solara'
+  | 'feral'
+  | 'pipoca'
+  | 'gelatino'
+  | 'capi'
+  | 'lola'
+  | 'zhaar';
 
 export interface CharacterDef {
   id: CharacterId;

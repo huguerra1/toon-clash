@@ -62,7 +62,8 @@ body {
   background: none;
 }
 
-.fight-screen {
+/* Mais específico que '#ui > *' para os toques atravessarem até os controles na tela. */
+#ui > .fight-screen {
   pointer-events: none;
 }
 

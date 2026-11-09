@@ -25,7 +25,19 @@ export type Pose = Record<Joint, number> & { hipsY: number; hipsRot: number; spr
 const POSE_KEYS = [...JOINTS, 'hipsY', 'hipsRot', 'spread'] as const;
 
 export type PropName =
-  'sword' | 'hammer' | 'jets' | 'horn' | 'wings' | 'shadowHand' | 'rocket' | 'stars' | 'bigHands';
+  | 'sword'
+  | 'hammer'
+  | 'jets'
+  | 'horn'
+  | 'wings'
+  | 'shadowHand'
+  | 'rocket'
+  | 'stars'
+  | 'bigHands'
+  | 'bread'
+  | 'rake'
+  | 'lid'
+  | 'stretch';
 
 const THIGH = 0.42;
 const SHIN = 0.4;
@@ -122,6 +134,11 @@ export class FighterModel {
       for (const hand of this.hands) hand.scale.setScalar(visible ? 2 : 1);
       return;
     }
+    if (name === 'stretch') {
+      // Braço de borracha: o antebraço estica para a frente durante o golpe.
+      this.joints.foreA.scale.y = visible ? 4 : 1;
+      return;
+    }
     for (const prop of this.props.get(name) ?? []) prop.visible = visible;
   }
 
@@ -142,6 +159,10 @@ export class FighterModel {
 
   private material(color: number, glow = false): THREE.MeshToonMaterial {
     const m = new THREE.MeshToonMaterial({ color, gradientMap: gradient });
+    if (this.look.translucent) {
+      m.transparent = true;
+      m.opacity = 0.78;
+    }
     const emissive = new THREE.Color(glow ? color : 0x000000);
     if (glow) emissive.multiplyScalar(0.7);
     m.emissive.copy(emissive);
@@ -285,6 +306,7 @@ export class FighterModel {
         t.rotation.z = 0.2;
       }
     }
+    this.buildHeadwear(spine, head);
     const stars = this.group(head, [0, 0.62, 0]);
     for (let i = 0; i < 3; i++) {
       const angle = (i / 3) * Math.PI * 2;
@@ -506,9 +528,136 @@ export class FighterModel {
     }
   }
 
+  /** Chapéus, orelhas, focinho e o que vai nas costas. */
+  private buildHeadwear(spine: THREE.Group, head: THREE.Group): void {
+    const { look } = this;
+    const has = (extra: (typeof look.extras)[number]) => look.extras.includes(extra);
+    if (has('potHelmet')) {
+      this.mesh(new THREE.CylinderGeometry(0.27, 0.25, 0.22, 18), 0xb8c0c8, head, [-0.01, 0.4, 0]);
+      const handle = this.mesh(
+        new THREE.BoxGeometry(0.3, 0.05, 0.07),
+        0x3a3a3a,
+        head,
+        [-0.3, 0.42, 0],
+      );
+      handle.rotation.z = 0.15;
+    }
+    if (has('cap')) {
+      this.mesh(
+        new THREE.SphereGeometry(0.255, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2),
+        look.accent,
+        head,
+        [-0.01, 0.27, 0],
+      );
+      this.mesh(new THREE.BoxGeometry(0.2, 0.03, 0.3), look.accent, head, [0.22, 0.29, 0]);
+    }
+    if (has('snout')) {
+      this.mesh(new THREE.BoxGeometry(0.2, 0.17, 0.24), look.skin, head, [0.24, 0.13, 0]);
+      this.mesh(new THREE.BoxGeometry(0.04, 0.05, 0.16), 0x2a1a10, head, [0.345, 0.17, 0], {
+        outline: 0,
+      });
+    }
+    if (has('roundEars')) {
+      for (const side of [1, -1]) {
+        this.mesh(new THREE.SphereGeometry(0.06, 8, 6), look.skin, head, [
+          -0.04,
+          0.42,
+          side * 0.18,
+        ]);
+      }
+    }
+    if (has('headphones')) {
+      const band = this.mesh(
+        new THREE.TorusGeometry(0.26, 0.03, 6, 20, Math.PI),
+        0x222222,
+        head,
+        [0, 0.22, 0],
+        {
+          outline: 0,
+        },
+      );
+      band.rotation.y = Math.PI / 2;
+      for (const side of [1, -1]) {
+        this.mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.08, 14), look.accent, head, [
+          0,
+          0.22,
+          side * 0.25,
+        ]).rotation.x = Math.PI / 2;
+      }
+    }
+    if (has('scarf')) {
+      this.mesh(
+        new THREE.TorusGeometry(0.13, 0.05, 6, 16),
+        look.accent,
+        spine,
+        [0, 0.52, 0],
+      ).rotation.x = Math.PI / 2;
+      const tail = this.mesh(
+        new THREE.BoxGeometry(0.06, 0.3, 0.1),
+        look.accent,
+        spine,
+        [-0.16, 0.38, 0.08],
+      );
+      tail.rotation.z = -0.4;
+    }
+    if (has('boombox')) {
+      this.mesh(new THREE.BoxGeometry(0.2, 0.32, 0.5), 0x2a2a33, spine, [-0.3, 0.32, 0]);
+      for (const z of [0.13, -0.13]) {
+        this.mesh(
+          new THREE.CylinderGeometry(0.09, 0.09, 0.03, 16),
+          look.glow,
+          spine,
+          [-0.41, 0.32, z],
+          {
+            glow: true,
+            outline: 0.01,
+          },
+        ).rotation.z = Math.PI / 2;
+      }
+    }
+  }
+
   /** Armas e acessórios que só aparecem durante certos golpes. */
   private buildArmProps(): void {
     const fore = this.joints.foreA;
+
+    const bread = this.group(fore, [0, -0.35, 0]);
+    this.mesh(new THREE.CapsuleGeometry(0.08, 0.95, 4, 10), 0xd9a25a, bread, [0, -0.55, 0], {
+      glow: true,
+    });
+    for (let i = 0; i < 4; i++) {
+      this.mesh(
+        new THREE.BoxGeometry(0.1, 0.02, 0.17),
+        0xa86a2a,
+        bread,
+        [0.05, -0.25 - i * 0.2, 0],
+        {
+          outline: 0,
+        },
+      ).rotation.x = 0.5;
+    }
+    this.addProp('bread', bread);
+
+    const rake = this.group(fore, [0, -0.3, 0]);
+    this.mesh(new THREE.CylinderGeometry(0.03, 0.03, 1.2, 8), 0x8a5a2a, rake, [0, -0.6, 0]);
+    this.mesh(new THREE.BoxGeometry(0.1, 0.06, 0.5), 0x7a7f88, rake, [0, -1.2, 0]);
+    for (let i = -2; i <= 2; i++) {
+      this.mesh(new THREE.BoxGeometry(0.16, 0.025, 0.025), 0x7a7f88, rake, [0.08, -1.2, i * 0.11], {
+        outline: 0,
+      });
+    }
+    this.addProp('rake', rake);
+
+    const lid = this.mesh(
+      new THREE.CylinderGeometry(0.32, 0.32, 0.05, 20),
+      0xb8c0c8,
+      this.joints.foreB,
+      [0.1, -0.2, 0],
+    );
+    lid.rotation.z = Math.PI / 2;
+    this.mesh(new THREE.SphereGeometry(0.05, 8, 6), 0x3a3a3a, lid, [0, 0.04, 0], { outline: 0 });
+    this.addProp('lid', lid);
+
     const sword = this.group(fore, [0, -0.35, 0]);
     this.mesh(new THREE.BoxGeometry(0.05, 1.1, 0.12), this.look.accent, sword, [0, -0.55, 0], {
       glow: true,

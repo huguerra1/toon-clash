@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import type { ToonalityKind } from '../combat/types';
 import type { Effects } from './effects';
 import type { FighterModel } from './fighter-model';
-import { addOutline, createToonMaterial } from './toon-material';
+import { addOutline, createToonMaterial, disposeObject } from './toon-material';
 
 /**
  * Animações das Toonalities (finalizações cômicas). São só visuais: a lógica apenas conta o
@@ -15,6 +15,9 @@ export class ToonalityPlayer {
   private portal: THREE.Mesh | null = null;
   private herd: THREE.Object3D[] = [];
   private pedestal: THREE.Mesh | null = null;
+  private pie: THREE.Object3D | null = null;
+  private blob: THREE.Mesh | null = null;
+  private speaker: THREE.Object3D | null = null;
   private lastTick = -1;
 
   constructor(
@@ -44,10 +47,16 @@ export class ToonalityPlayer {
         break;
       }
       case 'blocks':
+      case 'pixel':
         if (tick >= 50) v.root.visible = false;
         if (crossed(50)) {
           this.effects.burst(victimX, 1, 0xffffff, 20, 0.12);
-          const colors = [v.look.top, v.look.bottom, v.look.skin, v.look.hair, v.look.accent];
+          if (this.kind === 'pixel') this.effects.word(victimX, 2, true, 'GAME OVER');
+          // 'pixel' vira cubinhos de videogame antigo; 'blocks' vira peças nas cores do lutador.
+          const colors =
+            this.kind === 'pixel'
+              ? [0x37ff8b, 0x1f9f55, 0xfff35a, 0x111111]
+              : [v.look.top, v.look.bottom, v.look.skin, v.look.hair, v.look.accent];
           for (let i = 0; i < 40; i++) {
             const mesh = new THREE.Mesh(
               new THREE.BoxGeometry(0.22, 0.22, 0.22),
@@ -217,14 +226,120 @@ export class ToonalityPlayer {
         }
         break;
       }
+      case 'pie': {
+        // Uma torta gigante cai do céu e o lutador sai com a cara coberta de creme.
+        if (!this.pie) {
+          const pie = new THREE.Group();
+          const crust = new THREE.Mesh(
+            new THREE.CylinderGeometry(1.1, 0.9, 0.45, 24),
+            createToonMaterial(0xd99a4e),
+          );
+          const cream = new THREE.Mesh(
+            new THREE.SphereGeometry(1.05, 20, 8, 0, Math.PI * 2, 0, Math.PI / 2),
+            createToonMaterial(0xfff6e8),
+          );
+          cream.position.y = 0.2;
+          cream.scale.y = 0.45;
+          const cherry = new THREE.Mesh(
+            new THREE.SphereGeometry(0.16, 12, 10),
+            createToonMaterial(0xd62828),
+          );
+          cherry.position.y = 0.72;
+          for (const m of [crust, cream, cherry]) {
+            addOutline(m, 0.03);
+            pie.add(m);
+          }
+          pie.rotation.x = Math.PI;
+          pie.position.set(victimX, 14, 0);
+          this.group.add(pie);
+          this.pie = pie;
+        }
+        if (tick < 60) this.pie.position.y = Math.max(1.6, 14 - Math.pow(tick / 60, 2) * 12.4);
+        if (crossed(60)) {
+          this.effects.word(victimX, 2.2, true, 'SPLAT!');
+          this.effects.burst(victimX, 1.4, 0xfff6e8, 40, 0.14);
+          this.effects.shake = 0.6;
+        }
+        if (tick >= 60) {
+          v.tint(0xfff6e8);
+          v.body.scale.set(v.look.scale, v.look.scale * 0.8, v.look.scale);
+          if (tick > 140) this.pie.position.y = 1.6 + (tick - 140) * 0.1;
+        }
+        break;
+      }
+      case 'jelly': {
+        // O oponente é engolido por uma bolha gigante de gelatina e fica preso balançando.
+        if (!this.blob) {
+          const material = createToonMaterial(this.glow);
+          material.transparent = true;
+          material.opacity = 0.55;
+          this.blob = new THREE.Mesh(new THREE.SphereGeometry(1.3, 24, 18), material);
+          addOutline(this.blob, 0.03);
+          this.blob.position.set(victimX, 1.2, 0);
+          this.blob.scale.setScalar(0.01);
+          this.group.add(this.blob);
+        }
+        const grow = Math.min(1, Math.max(0, (tick - 20) / 30));
+        const wobble = 1 + Math.sin(tick * 0.3) * 0.06 * grow;
+        this.blob.scale.set(grow * wobble, grow / wobble, grow * wobble);
+        if (crossed(35)) this.effects.word(victimX, 2.6, true, 'GLUP!');
+        if (tick > 50) {
+          v.root.position.y = 0.4 + Math.sin(tick * 0.08) * 0.15;
+          v.root.rotation.z = Math.sin(tick * 0.05) * 0.6;
+          v.body.scale.setScalar(v.look.scale * 0.75);
+        }
+        break;
+      }
+      case 'speaker': {
+        // Uma caixa de som enorme sobe atrás da DJ e o grave arremessa o oponente para longe.
+        if (!this.speaker) {
+          const speaker = new THREE.Group();
+          const cabinet = new THREE.Mesh(
+            new THREE.BoxGeometry(1.4, 2.6, 1.2),
+            createToonMaterial(0x2a2a33),
+          );
+          cabinet.position.y = 1.3;
+          speaker.add(cabinet);
+          addOutline(cabinet, 0.04);
+          for (const [y, r] of [
+            [0.8, 0.5],
+            [1.95, 0.32],
+          ] as const) {
+            const cone = new THREE.Mesh(
+              new THREE.CylinderGeometry(r, r, 0.1, 24),
+              createToonMaterial(this.glow),
+            );
+            cone.rotation.z = Math.PI / 2;
+            cone.position.set(0.72, y, 0);
+            speaker.add(cone);
+          }
+          speaker.position.set(victimX - direction * 3.2, -3, 0);
+          speaker.rotation.y = direction > 0 ? 0 : Math.PI;
+          this.group.add(speaker);
+          this.speaker = speaker;
+        }
+        this.speaker.position.y = Math.min(0, -3 + tick * 0.08);
+        if (tick > 50 && tick < 120 && tick % 6 === 0) {
+          this.effects.ringPulse(this.speaker.position.x + direction * 0.9, 1.4, this.glow, 1.5);
+        }
+        if (crossed(60)) {
+          this.effects.word(victimX, 2.2, true, 'BOOM!');
+          this.effects.shake = 1;
+        }
+        if (tick > 60) {
+          const t = tick - 60;
+          v.root.position.x = victimX + direction * t * 0.25;
+          v.root.position.y = Math.max(0, t * 0.12 - t * t * 0.0012);
+          v.root.rotation.z = -direction * t * 0.25;
+        }
+        if (tick > 150) v.root.visible = false;
+        break;
+      }
     }
     this.lastTick = tick;
   }
 
   dispose(): void {
-    this.group.removeFromParent();
-    this.group.traverse((o) => {
-      if (o instanceof THREE.Mesh) o.geometry.dispose();
-    });
+    disposeObject(this.group);
   }
 }

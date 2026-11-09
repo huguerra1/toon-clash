@@ -36,3 +36,23 @@ export function addOutline(mesh: THREE.Mesh, thickness = 0.04): THREE.Mesh {
   mesh.add(outline);
   return outline;
 }
+
+/**
+ * Libera da GPU as geometrias, materiais e texturas de um objeto que saiu da cena.
+ * Preserva os recursos compartilhados (contorno e gradiente).
+ */
+export function disposeObject(root: THREE.Object3D): void {
+  root.removeFromParent();
+  const materials = new Set<THREE.Material>();
+  root.traverse((o) => {
+    if (!(o instanceof THREE.Mesh || o instanceof THREE.Sprite)) return;
+    o.geometry.dispose();
+    for (const m of Array.isArray(o.material) ? o.material : [o.material]) materials.add(m);
+  });
+  for (const m of materials) {
+    if (m === outlineMaterial) continue;
+    const map = (m as THREE.Material & { map?: THREE.Texture | null }).map;
+    if (map && map !== gradientMap) map.dispose();
+    m.dispose();
+  }
+}

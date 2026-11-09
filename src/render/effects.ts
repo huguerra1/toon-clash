@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import type { Projectile } from '../game/match';
-import { addOutline, createToonMaterial } from './toon-material';
+import { addOutline, createToonMaterial, disposeObject } from './toon-material';
 
 interface Particle {
   object: THREE.Object3D;
@@ -25,6 +25,8 @@ const PROJECTILE_COLORS: Record<string, number> = {
   cannon: 0x5fd3ff,
   star: 0xfff35a,
   ray: 0xff3030,
+  cassette: 0x2a2a33,
+  sound: 0x4ff0ff,
 };
 
 /** Partículas, palavras de quadrinho, ondas de choque, projéteis e tremor de câmera. */
@@ -48,8 +50,8 @@ export class Effects {
     speed = 0.08,
     shape: 'cube' | 'star' = 'star',
   ): void {
-    const material = new THREE.MeshBasicMaterial({ color, transparent: true });
     for (let i = 0; i < count; i++) {
+      const material = new THREE.MeshBasicMaterial({ color, transparent: true });
       const mesh = new THREE.Mesh(shape === 'cube' ? this.cube : this.star, material);
       mesh.position.set(x, y, 0.3);
       const angle = Math.random() * Math.PI * 2;
@@ -91,8 +93,8 @@ export class Effects {
   }
 
   dust(x: number, count = 8): void {
-    const material = new THREE.MeshBasicMaterial({ color: 0xd9c9a8, transparent: true });
     for (let i = 0; i < count; i++) {
+      const material = new THREE.MeshBasicMaterial({ color: 0xd9c9a8, transparent: true });
       const mesh = new THREE.Mesh(this.puff, material);
       mesh.position.set(x + (Math.random() - 0.5) * 0.6, 0.08, (Math.random() - 0.5) * 0.5);
       this.spawn(mesh, {
@@ -194,7 +196,7 @@ export class Effects {
     for (const [id, mesh] of this.projectileMeshes) {
       if (alive.has(id)) continue;
       this.burst(mesh.position.x, mesh.position.y, 0xffffff, 10, 0.06);
-      mesh.removeFromParent();
+      disposeObject(mesh);
       this.projectileMeshes.delete(id);
     }
   }
@@ -213,6 +215,14 @@ export class Effects {
       case 'ray':
         core = new THREE.Mesh(new THREE.CapsuleGeometry(p.h / 2, p.w, 6, 12), material);
         core.rotation.z = Math.PI / 2;
+        break;
+      case 'cassette':
+        core = new THREE.Mesh(new THREE.BoxGeometry(p.w, p.h, 0.1), material);
+        break;
+      case 'sound':
+        // Onda sonora: anel de pé, de frente para o oponente.
+        core = new THREE.Mesh(new THREE.TorusGeometry(p.h / 2, 0.06, 8, 24), material);
+        core.rotation.y = Math.PI / 2;
         break;
       default:
         core = new THREE.Mesh(new THREE.IcosahedronGeometry(p.w / 2, 1), material);
@@ -268,17 +278,23 @@ export class Effects {
         material.opacity = Math.max(0, p.life / p.maxLife);
       }
       if (p.life <= 0) {
-        p.object.removeFromParent();
+        this.removeParticle(p);
         this.particles.splice(i, 1);
       }
     }
     this.shake = Math.max(0, this.shake - dt * 2.5);
   }
 
+  /** Geometrias das partículas são compartilhadas; só o material é de cada uma. */
+  private removeParticle(p: Particle): void {
+    p.object.removeFromParent();
+    ((p.object as THREE.Mesh | THREE.Sprite).material as THREE.Material).dispose();
+  }
+
   clear(): void {
-    for (const p of this.particles) p.object.removeFromParent();
+    for (const p of this.particles) this.removeParticle(p);
     this.particles.length = 0;
-    for (const mesh of this.projectileMeshes.values()) mesh.removeFromParent();
+    for (const mesh of this.projectileMeshes.values()) disposeObject(mesh);
     this.projectileMeshes.clear();
     this.shake = 0;
   }

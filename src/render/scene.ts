@@ -10,6 +10,7 @@ import { Effects } from './effects';
 import { FighterModel, type PropName } from './fighter-model';
 import { targetPose } from './poses';
 import { buildStage, type BuiltStage, type StageId } from './stages';
+import { disposeObject } from './toon-material';
 import { ToonalityPlayer } from './toonality';
 
 /** Distância mínima da câmera até o plano da luta (lutadores próximos). */
@@ -32,6 +33,10 @@ const VISUAL_PROPS: Record<string, PropName> = {
   rocket: 'rocket',
   gorilla: 'bigHands',
   claw: 'bigHands',
+  bread: 'bread',
+  rake: 'rake',
+  lid: 'lid',
+  stretch: 'stretch',
 };
 const ALL_PROPS = [...new Set(Object.values(VISUAL_PROPS))];
 
@@ -48,7 +53,8 @@ export class GameRenderer {
   private toonality: ToonalityPlayer | null = null;
   private readonly fxKeys: [string, string] = ['', ''];
   private time = 0;
-  private loaded = '';
+  private loadedStage: StageId | null = null;
+  private loadedCharacters = '';
 
   constructor(container: HTMLElement) {
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -69,17 +75,21 @@ export class GameRenderer {
 
   /** Monta cenário e lutadores. Não refaz nada se já estiver com a mesma combinação. */
   load(characters: [CharacterId, CharacterId], stageId: StageId): void {
-    const key = `${characters.join(',')}|${stageId}`;
-    if (key === this.loaded) return;
-    this.loaded = key;
+    if (stageId !== this.loadedStage) {
+      this.loadedStage = stageId;
+      if (this.stage) {
+        disposeObject(this.stage.group);
+        this.stage.background.dispose();
+      }
+      this.stage = buildStage(stageId);
+      this.scene.add(this.stage.group);
+      this.scene.background = this.stage.background;
+      this.scene.fog = this.stage.fog;
+    }
+    const key = characters.join(',');
+    if (key === this.loadedCharacters) return;
+    this.loadedCharacters = key;
     this.reset();
-
-    if (this.stage) this.stage.group.removeFromParent();
-    this.stage = buildStage(stageId);
-    this.scene.add(this.stage.group);
-    this.scene.background = this.stage.background;
-    this.scene.fog = this.stage.fog;
-
     for (const m of this.models.flat()) m.dispose();
     this.models = [this.createModels(characters[0]), this.createModels(characters[1])];
   }

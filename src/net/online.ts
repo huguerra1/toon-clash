@@ -147,11 +147,22 @@ function startSelection(app: App, client: NetClient, side: 0 | 1): void {
       match?.receive(msg);
     }
   };
-  const gone = (text: string) => {
+  /** Fecha a conexão sem deixar callbacks antigos trocando a tela depois. */
+  const disconnect = () => {
+    client.onServer = () => {};
+    client.onPeer = () => {};
+    client.onClose = () => {};
     client.close();
     match?.dispose();
     app.online = null;
+  };
+  const gone = (text: string) => {
+    disconnect();
     app.show(messageScreen(app, 'Fim da conexão', text));
+  };
+  const cancel = () => {
+    disconnect();
+    app.show(app.mainMenu());
   };
   client.onServer = (msg) => {
     if (msg.type === 'peer-left') gone('O outro jogador saiu.');
@@ -159,18 +170,23 @@ function startSelection(app: App, client: NetClient, side: 0 | 1): void {
   client.onClose = () => gone('A conexão com o servidor caiu.');
 
   app.show(
-    app.selectScreen('online', 'medio', (chars) => {
-      mine = chars[0];
-      client.sendPeer({ type: 'hello', character: mine });
-      const wait = panel(
-        '<h2>Pronto!</h2><p class="blink">Esperando o outro jogador escolher…</p>',
-      );
-      app.show({
-        el: wait,
-        handle: (e) => (e.action === 'pause' || e.action === 'back') && gone('Você saiu da sala.'),
-      });
-      maybeStart();
-    }),
+    app.selectScreen(
+      'online',
+      'medio',
+      (chars) => {
+        mine = chars[0];
+        client.sendPeer({ type: 'hello', character: mine });
+        const wait = panel(
+          '<h2>Pronto!</h2><p class="blink">Esperando o outro jogador escolher…</p>',
+        );
+        app.show({
+          el: wait,
+          handle: (e) => (e.action === 'pause' || e.action === 'back') && cancel(),
+        });
+        maybeStart();
+      },
+      cancel,
+    ),
   );
 }
 
