@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { type PlayerInput, decodeInput } from '../core/input';
+import { type PlayerInput, decodeInput, emptyInput, encodeInput } from '../core/input';
+import type { GameEvent } from '../game/events';
 import { type MatchState, createMatch, defaultConfig, stepMatch } from '../game/match';
 import type { InputPacket } from './protocol';
 import { RollbackSession, checksum } from './rollback';
@@ -83,13 +84,46 @@ describe('RollbackSession', () => {
   it('com atraso, variação e pacotes perdidos, corrige com rollback e termina igual', () => {
     const frames = 900;
     const { peers, rollbacks } = play(5, 4, 0.2, frames);
-    const ref = reference(frames);
     expect(rollbacks).toBeGreaterThan(0);
     for (const peer of peers) {
       expect(peer.frame).toBe(frames);
     }
-    expect(checksum(peers[0]!.current)).toBe(checksum(peers[1]!.current));
-    expect(checksum(peers[0]!.current)).toBe(checksum(ref));
+    // Só frames confirmados pelos dois lados se comparam: os últimos ainda usam input previsto.
+    const confirmed = frames - 60;
+    expect(peers[0]!.checksumFor(confirmed)).not.toBeNull();
+    expect(peers[0]!.checksumFor(confirmed)).toBe(peers[1]!.checksumFor(confirmed));
+    expect(peers[0]!.checksumFor(confirmed)).toBe(checksum(reference(confirmed + 1)));
+  });
+
+  it('mostra eventos que só aparecem depois do rollback, sem repetir os já mostrados', () => {
+    const initial = createMatch(defaultConfig(['kai', 'umbra']));
+    initial.phase = 'fight';
+    const up = encodeInput({ ...emptyInput(), up: true });
+    const peer = new RollbackSession(initial, 0, { delay: 2 });
+    const seen: GameEvent[] = [];
+    // O jogador local pula; o remoto também, mas o input dele só chega depois.
+    for (let t = 0; t < 8; t++) {
+      peer.pushLocal(decodeInput(up));
+      seen.push(...peer.advance()!.events);
+    }
+    peer.receive({ type: 'input', from: 2, masks: Array<number>(6).fill(up) });
+    peer.pushLocal(decodeInput(up));
+    const result = peer.advance()!;
+    seen.push(...result.events);
+
+    expect(result.rolledBack).toBeGreaterThan(0);
+    const jumps = (player: number) =>
+      seen.filter((e) => e.type === 'jump' && e.player === player).length;
+    expect(jumps(0)).toBe(1);
+    expect(jumps(1)).toBe(1);
+  });
+
+  it('a soma de verificação muda com qualquer campo do estado', () => {
+    const a = createMatch(defaultConfig(['kai', 'umbra']));
+    const b = structuredClone(a);
+    b.fighters[0].vx = 0.01;
+    expect(checksum(b)).not.toBe(checksum(a));
+    expect(checksum(structuredClone(a))).toBe(checksum(a));
   });
 
   it('espera o outro jogador quando ele some', () => {
