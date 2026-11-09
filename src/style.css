@@ -1020,3 +1020,31 @@ h2 {
     font-size: 0.85rem;
   }
 }
+
+/* ---------- Assinatura ---------- */
+
+#ui > .signature {
+  position: absolute;
+  right: max(14px, env(safe-area-inset-right));
+  bottom: max(10px, env(safe-area-inset-bottom));
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  opacity: 0.85;
+  text-shadow: 1px 1px 0 var(--ink);
+  pointer-events: none;
+  z-index: 5;
+}
+
+.signature b {
+  font-family: var(--title-font);
+  font-weight: 400;
+  font-size: 1.1rem;
+  letter-spacing: 0.05em;
+  color: #ffb13d;
+}
+
+/* Na luta a assinatura some para não atrapalhar o HUD e os controles de toque. */
+.fighting > .signature {
+  display: none;
+}

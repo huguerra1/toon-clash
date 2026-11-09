@@ -69,6 +69,9 @@ interface Session {
   ladder?: { opponents: CharacterId[]; index: number };
 }
 
+/** Autor do jogo, mostrado no rodapé das telas e nos créditos. */
+export const AUTHOR = 'Hugo Mourao';
+
 const UNLOCK_KEY = 'toon-clash:zhaar-liberado';
 const RESULTS_DELAY = 200;
 
@@ -122,6 +125,7 @@ export class App {
     readonly audio: AudioSystem,
   ) {
     root.appendChild(this.hud.el);
+    root.appendChild(html('div', 'signature', `Criado por <b>${AUTHOR}</b>`));
     this.match = this.showcase(['kai', 'solara'], 'rooftop');
     this.show(this.titleScreen());
   }
@@ -869,7 +873,7 @@ export class App {
       `<h2>PARABÉNS!</h2>
        <p>${name} derrotou Warlord Zhaar e o relógio cósmico está a salvo.</p>
        ${first ? '<p class="unlock">Novo lutador liberado: <b>Warlord Zhaar</b>!</p>' : ''}
-       <p class="credits">Toon Clash — projeto de fã com personagens originais.</p>
+       <p class="credits">Toon Clash — criado por ${AUTHOR}. Personagens originais.</p>
        <p class="blink">ENTER para voltar ao menu</p>`,
     );
     el.addEventListener('click', () => this.show(this.mainMenu()));
