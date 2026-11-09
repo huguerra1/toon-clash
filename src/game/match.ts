@@ -775,7 +775,10 @@ function applyHit(
     return;
   }
 
-  const scale = Math.max(MIN_COMBO_SCALE, COMBO_SCALING ** d.comboHits);
+  // Multiplicação em laço em vez de potência: resultado idêntico em qualquer navegador (online).
+  let scale = 1;
+  for (let k = 0; k < d.comboHits && scale > MIN_COMBO_SCALE; k++) scale *= COMBO_SCALING;
+  scale = Math.max(MIN_COMBO_SCALE, scale);
   const damage = Math.round(move.damage * mul * scale);
   if (!fromProjectile) a.contact = 'hit';
 

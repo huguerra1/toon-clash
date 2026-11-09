@@ -5,6 +5,7 @@ import { Controls } from './core/controls';
 import { startLoop } from './core/loop';
 import { stepMatch } from './game/match';
 import { GameRenderer } from './render/scene';
+import { TouchControls } from './ui/touch';
 
 const container = document.querySelector<HTMLDivElement>('#game')!;
 const uiRoot = document.querySelector<HTMLDivElement>('#ui')!;
@@ -12,6 +13,7 @@ const controls = new Controls();
 const renderer = new GameRenderer(container);
 const audio = new AudioSystem();
 const app = new App(uiRoot, renderer, controls, audio);
+uiRoot.appendChild(new TouchControls(controls).el);
 
 // Navegadores só liberam som depois de uma interação do usuário.
 const unlock = () => audio.unlock();
