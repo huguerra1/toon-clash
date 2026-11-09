@@ -34,20 +34,36 @@ export interface LoopCallbacks {
   render(alpha: number): void;
 }
 
-/** Inicia o loop no navegador. Devolve uma função para parar. */
-export function startLoop({ update, render }: LoopCallbacks): () => void {
+/** Agenda um callback por quadro (ex.: renderer.setAnimationLoop do Three.js); null para. */
+export type AnimationLoop = (callback: ((now: number) => void) | null) => void;
+
+/**
+ * Inicia o loop no navegador. Devolve uma função para parar.
+ * Com `animationLoop` do Three.js o loop também funciona dentro de uma sessão de VR (WebXR).
+ */
+export function startLoop(
+  { update, render }: LoopCallbacks,
+  animationLoop?: AnimationLoop,
+): () => void {
   const clock = new FixedStepClock();
   let last = performance.now();
-  let frameId = 0;
 
   const frame = (now: number) => {
     const ticks = clock.advance(now - last);
     last = now;
     for (let i = 0; i < ticks; i++) update();
     render(clock.alpha);
-    frameId = requestAnimationFrame(frame);
   };
 
-  frameId = requestAnimationFrame(frame);
+  if (animationLoop) {
+    animationLoop(frame);
+    return () => animationLoop(null);
+  }
+  let frameId = 0;
+  const loop = (now: number) => {
+    frame(now);
+    frameId = requestAnimationFrame(loop);
+  };
+  frameId = requestAnimationFrame(loop);
   return () => cancelAnimationFrame(frameId);
 }

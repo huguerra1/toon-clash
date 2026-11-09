@@ -841,3 +841,109 @@ h2 {
   background: rgba(255, 255, 255, 0.8);
   font-weight: 800;
 }
+
+/* ---------- Online ---------- */
+
+.online {
+  width: min(520px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.online p {
+  margin: 0;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-weight: 800;
+}
+
+.online input {
+  font: inherit;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 3px solid var(--ink);
+  background: #fff;
+  color: var(--ink);
+  user-select: text;
+}
+
+.online .row {
+  display: flex;
+  gap: 10px;
+}
+
+.online .code {
+  flex: 1;
+  font-family: var(--title-font);
+  font-size: 1.4rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+}
+
+.btn {
+  font-family: var(--title-font);
+  font-size: 1.3rem;
+  letter-spacing: 0.04em;
+  padding: 8px 18px;
+  border-radius: 10px;
+  border: 3px solid var(--ink);
+  background: var(--yellow);
+  color: var(--ink);
+  box-shadow: 3px 3px 0 var(--ink);
+  cursor: pointer;
+}
+
+.btn.back {
+  align-self: flex-start;
+  background: #ddd;
+}
+
+.status {
+  min-height: 1.4em;
+}
+
+.status.error {
+  color: #ff8a8a;
+}
+
+.room-code {
+  font-family: var(--title-font);
+  font-size: 4rem;
+  letter-spacing: 0.25em;
+  text-align: center;
+  color: var(--yellow);
+  text-shadow: 4px 4px 0 var(--ink);
+  user-select: text;
+}
+
+.net-badge {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-weight: 800;
+  font-size: 0.85rem;
+  text-shadow: 1px 1px 0 var(--ink);
+  opacity: 0.8;
+}
+
+.net-badge.warn {
+  color: var(--yellow);
+  font-size: 1.2rem;
+  opacity: 1;
+}
+
+/* ---------- WebXR ---------- */
+
+#VRButton {
+  bottom: 16px !important;
+  left: auto !important;
+  right: 16px;
+  font-family: var(--title-font) !important;
+  letter-spacing: 0.05em;
+}

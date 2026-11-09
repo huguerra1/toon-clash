@@ -23,16 +23,22 @@ Antes de dar uma tarefa como pronta: `npm run lint && npm test && npm run build`
 - `src/game/` e `src/combat/` — **regras do jogo**. Código puro: não importa `three` nem acessa o DOM.
   O estado avança por `step(estado, inputs) → novo estado`, sem mutar o estado anterior.
 - `src/render/` — Three.js. Só **lê** o estado e desenha; nunca muda regra de jogo.
-- `src/ui/` — menus e HUD em HTML/CSS.
-- `src/characters/<nome>/` — dados de golpes, modelo e animações de cada lutador.
+- `src/ui/` — menus, HUD e controles de toque em HTML/CSS.
+- `src/characters/<nome>/` — `data.ts` (golpes, puro) e `look.ts` (visual, dados puros).
+- `src/ai/` — CPU e boneco de treino. Usa gerador com semente próprio, fora do MatchState.
+- `src/audio/` — sons sintetizados; só reage a `GameEvent`.
+- `src/net/` — online: `rollback.ts` (não conhece rede) e `client.ts` (WebSocket).
+- `server/` — servidor de salas em Node (`npm run server`). Veja `docs/ONLINE.md`.
+- `src/app.ts` — fluxo de telas e partida; `src/main.ts` liga tudo.
 
 ## Regras
 
 1. **Lógica separada do visual.** Toda regra nova de jogo ganha teste em Vitest ao lado do arquivo
    (`arquivo.test.ts`).
 2. **Passo fixo de 60 Hz.** Durações de golpes são contadas em ticks/frames, nunca em milissegundos.
-3. **Determinismo.** Nada de `Math.random()` ou `Date.now()` dentro da lógica; se precisar de
-   aleatoriedade, use um gerador com semente guardado no estado.
+3. **Determinismo.** Nada de `Math.random()`, `Date.now()`, `**`/`Math.pow` ou funções
+   trigonométricas dentro da lógica (o online depende de resultados idênticos em qualquer
+   navegador); se precisar de aleatoriedade, use um gerador com semente guardado no estado.
 4. **Personagens originais.** Pode se inspirar em arquétipos de desenhos (garoto com relógio
    alienígena, adolescente com nanitas etc.), mas **nunca** usar nomes, logos, falas ou visuais de
    personagens existentes (Ben 10, Mutante Rex, Jovens Titãs ou outros).

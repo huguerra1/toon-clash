@@ -14,6 +14,7 @@ import { STARTING_ROSTER, getCharacter } from './characters/roster';
 import type { CharacterId } from './combat/types';
 import type { Controls, MenuEvent } from './core/controls';
 import { type PlayerInput, emptyInput, mergeInputs } from './core/input';
+import type { GameEvent } from './game/events';
 import { type MatchState, createMatch, defaultConfig, stepMatch } from './game/match';
 import type { GameRenderer } from './render/scene';
 import { STAGES, type StageId } from './render/stages';
@@ -29,6 +30,17 @@ export type InputSource =
   | { kind: 'cpu'; brain: CpuBrain }
   | { kind: 'dummy' }
   | { kind: 'remote' };
+
+/** O que o módulo online fornece para a partida. */
+export interface OnlineHooks {
+  labels: [string, string];
+  /** Chamado quando a luta (re)começa, com o estado inicial idêntico nos dois lados. */
+  start(initial: MatchState): void;
+  /** Avança a luta online um tick (inputs, rede e rollback). */
+  tick(): void;
+  /** Opções da tela de resultado (revanche, sair). */
+  resultItems(): MenuItem[];
+}
 
 export interface Screen {
   el: HTMLElement;
@@ -83,14 +95,15 @@ export class App {
   session: Session | null = null;
   readonly hud = new Hud();
   private screen: Screen | null = null;
-  private paused: Menu | null = null;
+  /** Algo aberto por cima da luta (pausa, lista de golpes) que recebe os comandos de menu. */
+  private paused: { handle(e: MenuEvent): unknown } | null = null;
   private dummy: DummyMode = 'parado';
   private zhaarUnlocked = readUnlock();
   private tickCount = 0;
-  /** Gancho para o modo online (etapa M7). */
+  /** Tela de entrada do modo online (lobby), registrada pelo módulo de rede. */
   onlineScreen: ((app: App) => Screen) | null = null;
-  /** Inputs remotos por tick, preenchidos pelo módulo de rede. */
-  remoteInput: ((match: MatchState) => [PlayerInput, PlayerInput] | null) | null = null;
+  /** Partida online em andamento. */
+  online: OnlineHooks | null = null;
 
   constructor(
     private readonly root: HTMLElement,
@@ -507,14 +520,27 @@ export class App {
         : s.mode === 'training'
           ? ['VOCÊ', 'BONECO']
           : s.mode === 'online'
-            ? (this.onlineLabels ?? ['', ''])
+            ? (this.online?.labels ?? ['', ''])
             : ['VOCÊ', 'CPU'];
     this.hud.setup(this.match, labels);
     this.audio.playMusic(s.characters.includes('zhaar') ? 'boss' : 'fight');
+    if (s.mode === 'online') this.online?.start(this.match);
     this.show(this.fightScreen());
   }
 
-  onlineLabels: [string, string] | null = null;
+  /** Começa uma partida online já combinada com o outro jogador. */
+  startOnline(characters: [CharacterId, CharacterId], stage: StageId, hooks: OnlineHooks): void {
+    this.online = hooks;
+    this.session = {
+      mode: 'online',
+      characters,
+      stage,
+      sources: this.sourcesFor('online', 'medio'),
+      level: 'medio',
+    };
+    this.show(this.versusScreen());
+  }
+
   private dummyBrain: CpuBrain = createCpu('medio', 7);
 
   private inputFor(side: 0 | 1, source: InputSource): PlayerInput {
@@ -545,14 +571,8 @@ export class App {
       },
       tick: () => {
         const s = this.session!;
-        let inputs: [PlayerInput, PlayerInput] | null;
-        if (s.mode === 'online') {
-          inputs = this.remoteInput?.(this.match) ?? null;
-          if (!inputs) return; // Esperando o outro jogador.
-        } else {
-          inputs = [this.inputFor(0, s.sources[0]), this.inputFor(1, s.sources[1])];
-        }
-        this.advance(inputs);
+        if (s.mode === 'online') this.online?.tick();
+        else this.advance([this.inputFor(0, s.sources[0]), this.inputFor(1, s.sources[1])]);
         if (
           this.match.phase === 'matchOver' &&
           this.match.phaseTick >= RESULTS_DELAY &&
@@ -567,9 +587,13 @@ export class App {
 
   /** Avança a partida um tick e espalha os eventos para vídeo, som e HUD. */
   advance(inputs: [PlayerInput, PlayerInput]): void {
+    this.present(stepMatch(this.match, inputs));
+  }
+
+  /** Mostra um novo estado da partida (local ou vindo do rollback online). */
+  present(match: MatchState, events: readonly GameEvent[] = match.events): void {
     const before = this.match.phase;
-    this.match = stepMatch(this.match, inputs);
-    const events = this.match.events;
+    this.match = match;
     this.renderer.handleEvents(events, this.match);
     this.hud.handleEvents(events, this.match);
     this.audio.handleEvents(events);
@@ -670,7 +694,7 @@ export class App {
     this.paused = {
       handle: (e: MenuEvent) =>
         (e.action === 'back' || e.action === 'pause' || e.action === 'confirm') && closeMoves(),
-    } as unknown as Menu;
+    };
   }
 
   private resultsScreen(): Screen {
@@ -699,6 +723,8 @@ export class App {
       } else {
         return this.continueScreen();
       }
+    } else if (s.mode === 'online' && this.online) {
+      items = this.online.resultItems();
     } else {
       items = [
         { label: 'Revanche', action: () => this.beginFight() },
