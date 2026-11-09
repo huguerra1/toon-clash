@@ -27,7 +27,7 @@ Cada pacote repete os últimos 12 inputs, então perder pacotes não trava a lut
 
 ## WebSocket ou WebRTC?
 
-|                       | WebSocket (usado agora)                         | WebRTC DataChannel                                  |
+|                       | WebSocket (reserva)                             | WebRTC DataChannel (preferido)                      |
 | --------------------- | ----------------------------------------------- | --------------------------------------------------- |
 | Transporte            | TCP, sempre pelo servidor                       | UDP direto entre os jogadores (P2P)                 |
 | Latência              | ida ao servidor + volta (≈ 2× o ping até ele)   | só o caminho entre os dois (geralmente menor)       |
@@ -36,17 +36,22 @@ Cada pacote repete os últimos 12 inputs, então perder pacotes não trava a lut
 | Complexidade          | baixa                                           | alta (negociação SDP/ICE, servidor de sinalização)  |
 | Servidor necessário   | sim, repassa tudo                               | só para o "aperto de mão" (e TURN quando falha P2P) |
 
-**Conclusão:** WebSocket é o melhor ponto de partida — funciona em qualquer rede e, combinado
-com rollback e redundância de inputs, já dá uma experiência boa até ~100 ms de ping. O código
-foi separado para trocar o transporte sem mexer no rollback:
+**Como fica:** os dois. A sala e a escolha de lutadores sempre passam pelo WebSocket. Assim que o
+segundo jogador entra, o anfitrião tenta abrir um **WebRTC DataChannel** (`ordered: false,
+maxRetransmits: 0`) usando o próprio servidor como **sinalização** (oferta, resposta e candidatos
+ICE vão como mensagens `rtc` pelo `relay`; o servidor não precisou mudar).
+
+- Se o canal abrir, os **inputs** e as **somas de verificação** vão direto entre os jogadores. O
+  selo da luta mostra `ping … · direto`.
+- Mensagens que não podem se perder (`hello`, `start`, `rematch`) continuam pelo WebSocket.
+- Se o P2P não conectar (rede que exige TURN, navegador sem WebRTC), tudo segue pelo WebSocket,
+  como antes. Só há STUN público configurado, não TURN.
+- O `ping` mostrado é até o servidor, não entre os jogadores.
+
+O código continua separado para o transporte não mexer no rollback:
 
 - `src/net/rollback.ts` — não sabe nada de rede, só recebe e devolve pacotes de input.
-- `src/net/client.ts` — transporte (WebSocket).
-
-**Próximo passo recomendado:** usar o próprio servidor WebSocket como **sinalização** para abrir
-um **WebRTC DataChannel** (`ordered: false, maxRetransmits: 0`) entre os jogadores, e cair de
-volta para o WebSocket quando o P2P não conectar. Isso tira o servidor do meio do caminho e
-elimina os engasgos do TCP.
+- `src/net/client.ts` — transporte (WebSocket + WebRTC).
 
 ## Como rodar
 
@@ -68,3 +73,8 @@ porta da variável `PORT`. Em produção use `wss://` (HTTPS), porque páginas H
 Para o jogo publicado já vir com o endereço certo, defina a variável `VITE_NET_URL` no build
 (ex.: `VITE_NET_URL=wss://toon-clash-server.onrender.com npm run build`). O jogador também pode
 digitar outro endereço na tela Online.
+
+No GitHub Pages, o CI lê essa variável das configurações do repositório: **Settings → Secrets and
+variables → Actions → Variables → New repository variable**, nome `VITE_NET_URL`, valor
+`wss://…`. O próximo push na `main` publica o jogo já apontando para o servidor. Sem a variável,
+o jogo tenta o mesmo host na porta 8787.

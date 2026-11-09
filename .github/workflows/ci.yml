@@ -22,6 +22,9 @@ jobs:
       - run: npm run format:check
       - run: npm test
       - run: npm run build
+        env:
+          # Endereço do servidor de salas do online (variável do repositório; vazia = padrão).
+          VITE_NET_URL: ${{ vars.VITE_NET_URL }}
       - uses: actions/upload-pages-artifact@v3
         if: github.event_name == 'push'
         with:

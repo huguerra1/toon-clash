@@ -8,7 +8,8 @@ import { WebSocketServer } from 'ws';
 
 const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
 const IDLE_MS = 30 * 60 * 1000;
-const MAX_MESSAGE_BYTES = 4096;
+// Cabe a oferta SDP do WebRTC (que passa pelo relay) com folga.
+const MAX_MESSAGE_BYTES = 16 * 1024;
 
 function send(ws, message) {
   if (ws.readyState === ws.OPEN) ws.send(JSON.stringify(message));

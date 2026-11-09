@@ -24,7 +24,15 @@ export type PeerMessage =
   | { type: 'start'; characters: [CharacterId, CharacterId]; stage: StageId }
   | InputPacket
   | { type: 'checksum'; game: number; frame: number; value: number }
-  | { type: 'rematch' };
+  | { type: 'rematch' }
+  | RtcSignal;
+
+/** Negociação da conexão direta (WebRTC): oferta/resposta SDP ou um candidato ICE. */
+export interface RtcSignal {
+  type: 'rtc';
+  description?: RTCSessionDescriptionInit;
+  candidate?: RTCIceCandidateInit;
+}
 
 /**
  * Inputs a partir do frame `from`, um bitmask por frame. Cada pacote repete os últimos

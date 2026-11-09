@@ -3,7 +3,7 @@ import { startServer } from '../../server/server.mjs';
 import { type PlayerInput, decodeInput } from '../core/input';
 import { createMatch, defaultConfig, stepMatch } from '../game/match';
 import { NetClient } from './client';
-import type { ServerMessage } from './protocol';
+import type { PeerMessage, ServerMessage } from './protocol';
 import { RollbackSession, checksum } from './rollback';
 
 const DELAY = 2;
@@ -26,6 +26,70 @@ function waitFor(client: NetClient, type: ServerMessage['type']): Promise<Server
 }
 
 const tick = () => new Promise((r) => setTimeout(r, 1));
+
+async function until(ok: () => boolean): Promise<void> {
+  for (let i = 0; i < 500 && !ok(); i++) await tick();
+  expect(ok()).toBe(true);
+}
+
+/** Canal WebRTC de mentira (o Node não tem WebRTC): entrega na outra ponta, em memória. */
+class FakeChannel {
+  readyState: RTCDataChannelState = 'connecting';
+  other: FakeChannel | null = null;
+  sent = 0;
+  onmessage: ((e: { data: string }) => void) | null = null;
+  send(data: string): void {
+    this.sent++;
+    setTimeout(() => this.other?.onmessage?.({ data }));
+  }
+  close(): void {
+    this.readyState = 'closed';
+  }
+}
+
+const channels: FakeChannel[] = [];
+const fakePeers: FakePeer[] = [];
+
+/** Liga as duas pontas quando a resposta SDP chega ao anfitrião, como um P2P que deu certo. */
+class FakePeer {
+  channel: FakeChannel | null = null;
+  gotOffer = false;
+  onicecandidate: unknown = null;
+  ondatachannel: ((e: { channel: FakeChannel }) => void) | null = null;
+  constructor() {
+    fakePeers.push(this);
+  }
+  createDataChannel(): FakeChannel {
+    this.channel = new FakeChannel();
+    channels.push(this.channel);
+    return this.channel;
+  }
+  createOffer() {
+    return Promise.resolve({ type: 'offer' as const, sdp: 'oferta' });
+  }
+  createAnswer() {
+    return Promise.resolve({ type: 'answer' as const, sdp: 'resposta' });
+  }
+  setLocalDescription() {
+    return Promise.resolve();
+  }
+  setRemoteDescription(d: RTCSessionDescriptionInit) {
+    const guest = fakePeers.find((p) => p.gotOffer);
+    if (d.type === 'offer') this.gotOffer = true;
+    else if (guest && this.channel) {
+      const theirs = new FakeChannel();
+      this.channel.other = theirs;
+      theirs.other = this.channel;
+      this.channel.readyState = theirs.readyState = 'open';
+      guest.ondatachannel?.({ channel: theirs });
+    }
+    return Promise.resolve();
+  }
+  addIceCandidate() {
+    return Promise.resolve();
+  }
+  close(): void {}
+}
 
 let server: Awaited<ReturnType<typeof startServer>>;
 
@@ -98,6 +162,43 @@ describe('online (servidor + rollback)', () => {
     expect(await left).toEqual({ type: 'peer-left' });
     guest.close();
   }, 30_000);
+
+  it('abre canal direto (WebRTC) para os inputs e mantém o resto pelo servidor', async () => {
+    const original = globalThis.RTCPeerConnection;
+    globalThis.RTCPeerConnection = FakePeer as unknown as typeof RTCPeerConnection;
+    const url = `ws://localhost:${server.port}`;
+    const host = new NetClient();
+    const guest = new NetClient();
+    try {
+      await host.connect(url);
+      await guest.connect(url);
+      const created = waitFor(host, 'created');
+      host.send({ type: 'create' });
+      const room = ((await created) as { room: string }).room;
+      const peerJoined = waitFor(host, 'peer-joined');
+      guest.send({ type: 'join', room });
+      await peerJoined;
+
+      expect(host.direct).toBe(false);
+      host.startDirect();
+      await until(() => host.direct && guest.direct);
+
+      const got: PeerMessage[] = [];
+      guest.onPeer = (msg) => got.push(msg);
+      host.sendPeer({ type: 'input', game: 1, from: 0, masks: [5] });
+      host.sendPeer({ type: 'rematch' });
+      await until(() => got.length === 2);
+
+      expect(got).toContainEqual({ type: 'input', game: 1, from: 0, masks: [5] });
+      expect(got).toContainEqual({ type: 'rematch' });
+      // Só o input foi pelo canal direto; a revanche (que não pode se perder) foi pelo servidor.
+      expect(channels[0]!.sent).toBe(1);
+    } finally {
+      host.close();
+      guest.close();
+      globalThis.RTCPeerConnection = original;
+    }
+  });
 
   it('recusa sala inexistente', async () => {
     const client = new NetClient();
