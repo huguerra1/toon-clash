@@ -1,17 +1,17 @@
 import './style.css';
-import { Keyboard } from './core/input';
+import { Controls } from './core/controls';
 import { startLoop } from './core/loop';
-import { createWorld, stepWorld } from './game/world';
+import { createMatch, defaultConfig, stepMatch } from './game/match';
 import { GameRenderer } from './render/scene';
 
 const container = document.querySelector<HTMLDivElement>('#game')!;
-const keyboard = new Keyboard();
+const controls = new Controls();
 const renderer = new GameRenderer(container);
-let world = createWorld();
+let match = createMatch(defaultConfig(['kai', 'nyx']));
 
 startLoop({
   update: () => {
-    world = stepWorld(world, keyboard.read());
+    match = stepMatch(match, [controls.read(0), controls.read(1)]);
   },
-  render: () => renderer.render(world),
+  render: () => renderer.render(match),
 });

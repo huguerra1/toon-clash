@@ -1,5 +1,6 @@
 import * as THREE from 'three';
-import { ARENA_HALF_WIDTH, type WorldState } from '../game/world';
+import { ARENA_HALF_WIDTH } from '../combat/constants';
+import type { MatchState as WorldState } from '../game/match';
 import { addOutline, createToonMaterial } from './toon-material';
 
 const FIGHTER_COLORS = [0x3ddc84, 0x4a7dff] as const;
@@ -42,11 +43,11 @@ export class GameRenderer {
   render(world: WorldState): void {
     world.fighters.forEach((state, i) => {
       const mesh = this.fighters[i]!;
-      mesh.position.x = state.x;
+      mesh.position.set(state.x, state.y, 0);
       // Gira o "rosto" (a marca no cubo) para o lado do oponente.
       mesh.rotation.y = state.facing === 1 ? 0 : Math.PI;
       // Respiração de idle, só visual.
-      mesh.scale.y = 1 + Math.sin((world.tick + i * 20) * 0.08) * 0.02;
+      mesh.scale.y = state.crouching ? 0.6 : 1 + Math.sin((world.tick + i * 20) * 0.08) * 0.02;
     });
 
     this.followFighters(world);
