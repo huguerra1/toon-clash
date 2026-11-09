@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import type { CharacterLook } from '../characters/look';
 import { emblemTexture } from './emblems';
 import { type MouthShape, mouthTexture } from './face-textures';
+import { type BoundRig, DANGLE_PREFIX, PROP_PREFIX, bindRig } from './rig';
 import { addOutline } from './toon-material';
 
 export const JOINTS = [
@@ -86,8 +87,8 @@ export class FighterModel {
   readonly root = new THREE.Group();
   /** Grupo interno: escala do personagem e efeitos (encolher, teleporte). */
   readonly body = new THREE.Group();
-  readonly hips = new THREE.Group();
-  readonly joints = {} as Record<Joint, THREE.Group>;
+  hips: THREE.Object3D = new THREE.Group();
+  joints = {} as Record<Joint, THREE.Object3D>;
   readonly pose: Pose = neutralPose();
   private readonly materials: THREE.MeshToonMaterial[] = [];
   private readonly baseEmissive = new Map<THREE.MeshToonMaterial, THREE.Color>();
@@ -95,7 +96,7 @@ export class FighterModel {
   private readonly hands: THREE.Object3D[] = [];
   private flash = 0;
   /** Altura do quadril, depende do tamanho das pernas de cada lutador. */
-  readonly hipHeight: number;
+  hipHeight: number;
   private readonly thigh: number;
   private readonly shin: number;
   private readonly eyes: { pupil: THREE.Object3D | null; lid: THREE.Object3D }[] = [];
@@ -110,19 +111,89 @@ export class FighterModel {
   private time = 0;
   private stretch = 1;
 
-  constructor(readonly look: CharacterLook) {
+  /**
+   * @param source modelo carregado de um .glb (feito no Blender). Sem ele, o lutador é montado
+   * com primitivas. O .glb precisa ter nós com os nomes de `RIG_JOINTS` (veja docs/MODELOS-3D.md).
+   */
+  constructor(
+    readonly look: CharacterLook,
+    source?: THREE.Object3D,
+  ) {
     const legs = look.proportions?.legs ?? 1;
     this.thigh = THIGH * legs;
     this.shin = SHIN * legs;
     this.hipHeight = this.thigh + this.shin + 0.06;
     this.root.add(this.body);
     this.body.scale.setScalar(look.scale);
-    this.body.add(this.hips);
-    this.build();
+    const bound = source ? bindRig(source) : null;
+    if (source && bound && !('missing' in bound)) {
+      this.adopt(source, bound);
+    } else {
+      if (bound && 'missing' in bound) {
+        console.warn(
+          `Modelo 3D sem as partes: ${bound.missing.join(', ')}. Usando o modelo padrão.`,
+        );
+      }
+      this.body.add(this.hips);
+      this.build();
+      this.nameParts();
+    }
     this.root.traverse((o) => {
-      if (o instanceof THREE.Mesh && o.material instanceof THREE.MeshToonMaterial)
-        o.castShadow = true;
+      if (o instanceof THREE.Mesh && !o.userData.outline) o.castShadow = true;
     });
+  }
+
+  /** Dá nomes padronizados às partes, para exportar como .glb e editar no Blender. */
+  private nameParts(): void {
+    this.hips.name = 'hips';
+    for (const joint of JOINTS) this.joints[joint].name = joint;
+    for (const [name, objects] of this.props)
+      for (const o of objects) o.name = `${PROP_PREFIX}${name}`;
+    this.danglers.forEach((d, i) => (d.pivot.name = `${DANGLE_PREFIX}${i}`));
+  }
+
+  /** Usa um modelo carregado: troca os materiais pelo toon do jogo e liga rosto, acessórios e molas. */
+  private adopt(source: THREE.Object3D, rig: BoundRig): void {
+    this.body.add(source);
+    this.hips = rig.hips;
+    this.joints = rig.joints;
+    this.hipHeight = rig.hips.position.y;
+    const meshes: THREE.Mesh[] = [];
+    source.traverse((o) => {
+      if (o instanceof THREE.Mesh && !o.userData.outline && o.name !== 'mouth') meshes.push(o);
+    });
+    for (const mesh of meshes) {
+      const old = mesh.material as THREE.MeshStandardMaterial;
+      const glow = (old.emissive?.getHex() ?? 0) !== 0;
+      const toon = this.material(old.color?.getHex() ?? 0xffffff, glow);
+      if (old.map) toon.map = old.map;
+      mesh.material = toon;
+      addOutline(mesh, 0.02);
+    }
+    for (const [name, objects] of rig.props) {
+      for (const o of objects) this.addProp(name as PropName, o);
+    }
+    for (const pivot of rig.danglers) {
+      const rest = pivot.rotation.z;
+      this.danglers.push({ pivot, rest, angle: rest, velocity: 0, gain: 1 });
+    }
+    this.eyes.push(...rig.eyes);
+    this.hands.push(...rig.hands);
+    this.addEmblem(rig.joints.spine);
+    for (const brow of rig.brows) {
+      this.brows.push({ mesh: brow, side: brow.position.z >= 0 ? 1 : -1, y: brow.position.y });
+    }
+    if (rig.mouth) {
+      const mouth = new THREE.Mesh(
+        new THREE.PlaneGeometry(0.17, 0.085),
+        new THREE.MeshBasicMaterial({ map: mouthTexture('neutral'), transparent: true }),
+      );
+      mouth.rotation.y = Math.PI / 2;
+      rig.mouth.add(mouth);
+      this.mouth = mouth;
+    }
+    this.expression = 'ko';
+    this.setExpression('neutral');
   }
 
   /** Aproxima a pose atual da pose alvo (rate 0..1 por quadro de 60 Hz). */
@@ -348,18 +419,7 @@ export class FighterModel {
     this.mesh(new THREE.TorusGeometry(0.1, 0.03, 6, 16), look.top, spine, [0, 0.52 * t, 0], {
       outline: 0,
     }).rotation.x = Math.PI / 2;
-    if (look.emblem) {
-      const emblem = new THREE.Mesh(
-        new THREE.PlaneGeometry(0.17, 0.17),
-        new THREE.MeshBasicMaterial({
-          map: emblemTexture(look.emblem, look.accent, look.top),
-          transparent: true,
-        }),
-      );
-      emblem.position.set(0.172 * b + 0.004, 0.34 * t, 0);
-      emblem.rotation.y = Math.PI / 2;
-      spine.add(emblem);
-    }
+    this.addEmblem(spine);
     if (has('stripe')) {
       this.mesh(new THREE.BoxGeometry(0.06, 0.34, 0.42 * b), 0xf4f4f4, spine, [0.15 * b, 0.3, 0], {
         outline: 0,
@@ -618,6 +678,7 @@ export class FighterModel {
       for (const side of [1, -1] as const) {
         const z = side * 0.085;
         const eye = this.group(head, [0.2, 0.25, z]);
+        eye.name = 'eye';
         const radius = glowEyes ? 0.058 : 0.068;
         this.mesh(
           new THREE.SphereGeometry(radius, 14, 10),
@@ -632,6 +693,7 @@ export class FighterModel {
         let pupil: THREE.Group | null = null;
         if (!glowEyes) {
           pupil = this.group(eye, [0, 0, 0]);
+          pupil.name = 'pupil';
           this.mesh(new THREE.SphereGeometry(0.034, 10, 8), 0x111111, pupil, [0.052, 0, 0], {
             outline: 0,
           });
@@ -649,6 +711,7 @@ export class FighterModel {
           { outline: 0 },
         );
         lid.rotation.z = Math.PI / 2;
+        lid.name = 'lid';
         this.eyes.push({ pupil, lid });
         const browY = 0.36;
         const brow = this.mesh(new THREE.BoxGeometry(0.028, 0.03, 0.12), darker(look.hair), head, [
@@ -657,6 +720,7 @@ export class FighterModel {
           z,
         ]);
         brow.rotation.order = 'ZXY';
+        brow.name = 'brow';
         brow.rotation.z = -0.35;
         this.brows.push({ mesh: brow, side, y: browY });
       }
@@ -667,10 +731,28 @@ export class FighterModel {
     );
     mouth.position.set(snout ? 0.348 : 0.248, snout ? 0.085 : 0.115, 0);
     mouth.rotation.y = Math.PI / 2;
+    mouth.name = 'mouth';
     head.add(mouth);
     this.mouth = mouth;
     this.expression = 'ko';
     this.setExpression('neutral');
+  }
+
+  /** Emblema do lutador no peito (desenhado em textura, por cima da roupa). */
+  private addEmblem(spine: THREE.Object3D): void {
+    const { look } = this;
+    if (!look.emblem) return;
+    const t = look.proportions?.torso ?? 1;
+    const emblem = new THREE.Mesh(
+      new THREE.PlaneGeometry(0.17, 0.17),
+      new THREE.MeshBasicMaterial({
+        map: emblemTexture(look.emblem, look.accent, look.top),
+        transparent: true,
+      }),
+    );
+    emblem.position.set(0.172 * look.bulk + 0.004, 0.34 * t, 0);
+    emblem.rotation.y = Math.PI / 2;
+    spine.add(emblem);
   }
 
   /** Mão de luva de desenho: palma arredondada e polegar. */
@@ -683,6 +765,7 @@ export class FighterModel {
     side: 1 | -1,
   ): THREE.Group {
     const hand = this.group(fore, [0, y, 0]);
+    hand.name = 'hand';
     this.mesh(new THREE.SphereGeometry(size, 12, 10), color, hand, [0, 0, 0], { glow }).scale.set(
       1.05,
       0.92,

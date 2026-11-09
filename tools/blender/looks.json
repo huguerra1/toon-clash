@@ -1,0 +1,280 @@
+{
+  "kai": [
+    {
+      "skin": 15843965,
+      "hair": 1776411,
+      "top": 14239019,
+      "bottom": 2964042,
+      "shoes": 16053492,
+      "accent": 4052735,
+      "glow": 4052735,
+      "hairStyle": "messy",
+      "scale": 0.95,
+      "bulk": 1,
+      "extras": ["watch"],
+      "emblem": "bolt",
+      "personality": "hero",
+      "proportions": {
+        "head": 1.12,
+        "legs": 0.95
+      }
+    },
+    {
+      "skin": 9272168,
+      "hair": 1776411,
+      "top": 7035723,
+      "bottom": 5522742,
+      "shoes": 4010537,
+      "accent": 4052735,
+      "glow": 16752704,
+      "hairStyle": "bald",
+      "scale": 1.1,
+      "bulk": 1.4,
+      "extras": ["watch", "rocks"],
+      "emblem": "bolt",
+      "personality": "brute",
+      "proportions": {
+        "head": 0.95,
+        "arms": 1.15,
+        "torso": 1.1,
+        "legs": 0.9
+      }
+    },
+    {
+      "skin": 5951999,
+      "hair": 16773978,
+      "top": 1981066,
+      "bottom": 1981066,
+      "shoes": 16773978,
+      "accent": 4052735,
+      "glow": 10483711,
+      "hairStyle": "crest",
+      "scale": 0.95,
+      "bulk": 0.85,
+      "extras": ["watch", "glowEyes", "glowHands"],
+      "emblem": "bolt",
+      "personality": "hero",
+      "proportions": {
+        "head": 1.05,
+        "legs": 1.08
+      }
+    }
+  ],
+  "nyx": [
+    {
+      "skin": 13010498,
+      "hair": 15263989,
+      "top": 2372170,
+      "bottom": 3816006,
+      "shoes": 2236968,
+      "accent": 16732067,
+      "glow": 16732067,
+      "hairStyle": "long",
+      "scale": 1,
+      "bulk": 1,
+      "extras": ["gauntlets", "stripe"],
+      "emblem": "gear",
+      "personality": "cool",
+      "proportions": {
+        "legs": 1.05,
+        "arms": 1.05
+      }
+    }
+  ],
+  "umbra": [
+    {
+      "skin": 15255968,
+      "hair": 993830,
+      "top": 1323822,
+      "bottom": 1056797,
+      "shoes": 726548,
+      "accent": 13162194,
+      "glow": 4063152,
+      "hairStyle": "hood",
+      "scale": 0.95,
+      "bulk": 0.9,
+      "extras": ["cape"],
+      "emblem": "moon",
+      "personality": "mystic",
+      "proportions": {
+        "legs": 1.08,
+        "head": 0.95
+      }
+    }
+  ],
+  "ferrum": [
+    {
+      "skin": 9067068,
+      "hair": 2236962,
+      "top": 15905076,
+      "bottom": 3026483,
+      "shoes": 1973794,
+      "accent": 3662079,
+      "glow": 6280191,
+      "hairStyle": "bald",
+      "scale": 1.12,
+      "bulk": 1.35,
+      "extras": ["cannonArm", "visor", "shoulderPads", "armor", "cap"],
+      "emblem": "shield",
+      "personality": "brute",
+      "proportions": {
+        "head": 0.9,
+        "arms": 1.15,
+        "torso": 1.12,
+        "legs": 0.92
+      }
+    }
+  ],
+  "solara": [
+    {
+      "skin": 9422079,
+      "hair": 16773800,
+      "top": 15921906,
+      "bottom": 2789274,
+      "shoes": 16763213,
+      "accent": 16763213,
+      "glow": 16765503,
+      "hairStyle": "crest",
+      "scale": 1.02,
+      "bulk": 0.9,
+      "extras": ["glowEyes", "glowHands", "belt"],
+      "emblem": "star",
+      "personality": "royal",
+      "proportions": {
+        "legs": 1.12,
+        "head": 1.02
+      }
+    }
+  ],
+  "feral": [
+    {
+      "skin": 13208410,
+      "hair": 3875860,
+      "top": 3829413,
+      "bottom": 7035450,
+      "shoes": 14737632,
+      "accent": 16765503,
+      "glow": 11992922,
+      "hairStyle": "spiky",
+      "scale": 0.92,
+      "bulk": 0.95,
+      "extras": ["ears", "belt"],
+      "emblem": "leaf",
+      "personality": "wild",
+      "proportions": {
+        "head": 1.15,
+        "legs": 0.9,
+        "arms": 1.08
+      }
+    }
+  ],
+  "pipoca": [
+    {
+      "skin": 16765352,
+      "hair": 15251530,
+      "top": 14246443,
+      "bottom": 5916210,
+      "shoes": 7027999,
+      "accent": 3116938,
+      "glow": 16763213,
+      "hairStyle": "messy",
+      "scale": 0.9,
+      "bulk": 0.95,
+      "extras": ["potHelmet", "scarf", "belt"],
+      "emblem": "crown",
+      "personality": "knight",
+      "proportions": {
+        "head": 1.15,
+        "legs": 0.85
+      }
+    }
+  ],
+  "gelatino": [
+    {
+      "skin": 10178047,
+      "hair": 10178047,
+      "top": 9059824,
+      "bottom": 8007904,
+      "shoes": 6957256,
+      "accent": 16777215,
+      "glow": 13802495,
+      "hairStyle": "bald",
+      "scale": 1.02,
+      "bulk": 1.25,
+      "extras": [],
+      "personality": "goofy",
+      "proportions": {
+        "head": 1.1,
+        "legs": 0.8,
+        "arms": 1.1,
+        "torso": 0.95
+      },
+      "translucent": true
+    }
+  ],
+  "capi": [
+    {
+      "skin": 10120005,
+      "hair": 8016435,
+      "top": 4880954,
+      "bottom": 3885658,
+      "shoes": 3026478,
+      "accent": 14725690,
+      "glow": 8257386,
+      "hairStyle": "bald",
+      "scale": 0.95,
+      "bulk": 1.3,
+      "extras": ["snout", "roundEars", "cap"],
+      "emblem": "cassette",
+      "personality": "lazy",
+      "proportions": {
+        "head": 1.05,
+        "legs": 0.85,
+        "torso": 1.05
+      }
+    }
+  ],
+  "lola": [
+    {
+      "skin": 9263675,
+      "hair": 2085313,
+      "top": 16765503,
+      "bottom": 2829120,
+      "shoes": 16732067,
+      "accent": 16732067,
+      "glow": 5239039,
+      "hairStyle": "spiky",
+      "scale": 0.98,
+      "bulk": 0.9,
+      "extras": ["headphones", "boombox"],
+      "emblem": "note",
+      "personality": "dancer",
+      "proportions": {
+        "legs": 1.1,
+        "head": 1.05
+      }
+    }
+  ],
+  "zhaar": [
+    {
+      "skin": 8014490,
+      "hair": 2757936,
+      "top": 4868702,
+      "bottom": 3026490,
+      "shoes": 1973798,
+      "accent": 14034984,
+      "glow": 16728128,
+      "hairStyle": "bald",
+      "scale": 1.3,
+      "bulk": 1.4,
+      "extras": ["armor", "shoulderPads", "cape", "glowEyes"],
+      "emblem": "flame",
+      "personality": "villain",
+      "proportions": {
+        "head": 0.92,
+        "arms": 1.12,
+        "torso": 1.1
+      }
+    }
+  ]
+}

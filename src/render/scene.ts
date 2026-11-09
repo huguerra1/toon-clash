@@ -7,6 +7,7 @@ import type { CharacterId, MoveDef } from '../combat/types';
 import type { GameEvent } from '../game/events';
 import type { MatchState } from '../game/match';
 import { Effects } from './effects';
+import { getFighterSource } from './fighter-assets';
 import { PostProcessing } from './post';
 import { type Quality, loadQuality, saveQuality } from './quality';
 import type { Personality } from '../characters/look';
@@ -147,6 +148,11 @@ export class GameRenderer {
     this.models = [this.createModels(characters[0]), this.createModels(characters[1])];
   }
 
+  /** Força recriar os lutadores no próximo load() (ex.: modelos 3D acabaram de carregar). */
+  invalidateCharacters(): void {
+    this.loadedCharacters = '';
+  }
+
   /** Limpa efeitos e Toonality (novo round ou nova partida). */
   reset(): void {
     this.effects.clear();
@@ -162,7 +168,7 @@ export class GameRenderer {
 
   private createModels(id: CharacterId): FighterModel[] {
     return LOOKS[id].map((_, form) => {
-      const model = new FighterModel(getLook(id, form));
+      const model = new FighterModel(getLook(id, form), getFighterSource(id, form));
       this.scene.add(model.root);
       return model;
     });

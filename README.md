@@ -7,19 +7,24 @@ Jogo de luta 1x1 estilo Mortal Kombat, em 2.5D, rodando direto no navegador com
 
 ## O que tem
 
-- **7 lutadores** com golpes especiais próprios: Kai Volt (troca de forma), Nyx-R (armas de
-  nanitas), Umbra (sombras e teleporte), Ferrum (canhão e armadura), Solara (estrelas e voo),
-  Feral (vira animais) e o chefe Warlord Zhaar (liberado ao zerar o Arcade).
+- **11 lutadores** com golpes especiais próprios: Kai Volt (troca de forma), Nyx-R (armas de
+  microrrobôs), Umbra (sombras e teleporte), Ferrum (canhão e armadura), Solara (estrelas e voo),
+  Feral (vira animais), Sir Pipoca (baguete encantada), Gelatino (braços elásticos), Capi
+  Folgado (ancinho e fitas), Lola Volume (ondas sonoras) e o chefe Warlord Zhaar (liberado ao
+  zerar o Arcade).
 - **Combate**: combos encadeados, cancelamento em especiais, agarrões, golpes baixos/altos,
   lançamentos e juggle, hitstop, dano na defesa e **Toonalities** — finalizações cômicas no
   lugar de fatalities.
-- **Modos**: Arcade (6 lutas até o chefe), Versus local, Contra a CPU, Treino e Online.
+- **Modos**: Tutorial, Arcade (6 lutas + chefe), Versus local, Contra a CPU, Treino e Online.
 - **CPU** com 4 níveis: Fácil, Médio, Difícil e Pesadelo.
 - **Treino** com boneco configurável (parado, defende, agachado, pulando ou CPU).
 - **Online** com salas por código e netcode com rollback — veja [docs/ONLINE.md](docs/ONLINE.md).
 - **Controles**: teclado (2 jogadores), controle (Gamepad API) e toque no celular.
 - **Áudio** 100% sintetizado (efeitos, músicas e locutor em português).
 - **VR**: modo espectador em óculos com WebXR.
+- **Visual**: rosto expressivo, squash & stretch, partes que balançam, brilho (bloom) e 6 cenários
+  animados com plateia. Modelos feitos no Blender podem substituir os de primitivas —
+  veja [docs/MODELOS-3D.md](docs/MODELOS-3D.md).
 
 ## Como rodar
 

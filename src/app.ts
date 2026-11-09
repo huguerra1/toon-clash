@@ -27,6 +27,7 @@ import type { GameRenderer } from './render/scene';
 import { STAGES, type StageId } from './render/stages';
 import { Hud } from './ui/hud';
 import { Menu, type MenuItem } from './ui/menu';
+import { fighterPortrait } from './render/portraits';
 import { BUTTON_NAMES, moveList } from './ui/notation';
 import { TutorialView } from './ui/tutorial-view';
 
@@ -300,7 +301,7 @@ export class App {
       const card = html(
         'button',
         'card',
-        `<div class="portrait" style="--hair:${hex(look.hair)};--skin:${hex(look.skin)};--top:${hex(look.top)};--glow:${hex(look.glow)}"><div class="eyes"></div></div>
+        `<div class="portrait" style="--glow:${hex(look.glow)};--top:${hex(look.top)}"><img src="${fighterPortrait(id)}" alt="" draggable="false" /></div>
          <span>${def.name}</span><i class="tag tag-0">1P</i><i class="tag tag-1">${twoPlayers ? '2P' : 'CPU'}</i>`,
       );
       card.addEventListener('click', () => {
@@ -492,7 +493,7 @@ export class App {
     const s = this.session!;
     const ladder = s.ladder!;
     const opponent = ladder.opponents[ladder.index]!;
-    const cycle: StageId[] = ['rooftop', 'forest', 'base'];
+    const cycle: StageId[] = ['rooftop', 'park', 'forest', 'sweets', 'base'];
     s.characters = [s.characters[0], opponent];
     s.stage = opponent === 'zhaar' ? 'ship' : cycle[ladder.index % cycle.length]!;
     // A CPU fica mais esperta a cada luta do arcade.

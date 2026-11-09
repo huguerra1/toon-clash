@@ -26,6 +26,8 @@ const outlineMaterial = new THREE.MeshBasicMaterial({ color: 0x111111, side: THR
  */
 export function addOutline(mesh: THREE.Mesh, thickness = 0.04): THREE.Mesh {
   const outline = new THREE.Mesh(mesh.geometry, outlineMaterial);
+  // Marcado para não ser exportado nem receber outro contorno.
+  outline.userData.outline = true;
   mesh.geometry.computeBoundingBox();
   const size = mesh.geometry.boundingBox!.getSize(new THREE.Vector3());
   outline.scale.set(

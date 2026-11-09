@@ -248,21 +248,18 @@ h2 {
 .portrait {
   width: 70px;
   height: 78px;
-  border-radius: 40% 40% 12px 12px;
+  border-radius: 12px;
   border: 3px solid var(--ink);
-  background: linear-gradient(var(--hair) 0 28%, var(--skin) 28% 72%, var(--top) 72%);
+  background: radial-gradient(circle at 50% 35%, var(--glow), var(--top) 75%);
   position: relative;
+  overflow: hidden;
 }
 
-.portrait .eyes {
-  position: absolute;
-  top: 40%;
-  left: 18px;
-  width: 30px;
-  height: 10px;
-  background:
-    radial-gradient(circle at 25% 50%, #111 3px, #fff 4px 6px, transparent 7px),
-    radial-gradient(circle at 75% 50%, #111 3px, #fff 4px 6px, transparent 7px);
+.portrait img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 .card .tag {
@@ -723,10 +720,6 @@ h2 {
   .portrait {
     width: 52px;
     height: 58px;
-  }
-
-  .portrait .eyes {
-    left: 10px;
   }
 
   .side .name {

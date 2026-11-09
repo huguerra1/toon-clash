@@ -11,7 +11,7 @@ const base: CharacterLook = {
   hairStyle: 'messy',
   scale: 0.95,
   bulk: 1,
-  extras: ['watch', 'stripe'],
+  extras: ['watch'],
   emblem: 'bolt',
   personality: 'hero',
   proportions: { head: 1.12, legs: 0.95 },
