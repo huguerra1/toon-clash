@@ -84,7 +84,8 @@ export class Effects {
       gravity: 0,
       spin: 0,
       life: 18,
-      grow: 0.18 * size,
+      // Crescimento multiplicativo por tick: ~3x ao longo da vida do anel.
+      grow: 0.065,
       fade: true,
     });
   }
