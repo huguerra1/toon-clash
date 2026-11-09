@@ -68,6 +68,7 @@ function lobbyScreen(app: App): Screen {
         status.insertAdjacentHTML('afterend', `<div class="room-code">${msg.room}</div>`);
         break;
       case 'peer-joined':
+        client.startDirect();
         startSelection(app, client, 0);
         break;
       case 'joined':
@@ -254,8 +255,13 @@ class OnlineMatch implements OnlineHooks {
       this.client.sendPeer({ type: 'checksum', game: this.game, frame, value });
     }
     const ping = Math.round(this.client.ping);
+    const route = this.client.direct ? ' · direto' : '';
     this.badge.textContent =
-      this.stalled > STALL_WARNING ? 'Aguardando o outro jogador…' : ping ? `ping ${ping} ms` : '';
+      this.stalled > STALL_WARNING
+        ? 'Aguardando o outro jogador…'
+        : ping
+          ? `ping ${ping} ms${route}`
+          : '';
     this.badge.classList.toggle('warn', this.stalled > STALL_WARNING);
   }
 
