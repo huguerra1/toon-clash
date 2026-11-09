@@ -185,7 +185,7 @@ export class App {
     const el = html(
       'div',
       'screen title-screen',
-      `<h1 class="logo">TOON<br><span>CLASH</span></h1>
+      `<h1 class="logo"><span class="w1">TOON</span><br><span class="w2">CLASH</span></h1>
        <p class="tagline">Lutadores originais inspirados nos desenhos dos anos 2000</p>
        <p class="blink">Aperte ENTER ou toque para começar</p>`,
     );
