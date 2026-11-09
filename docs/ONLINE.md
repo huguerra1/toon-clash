@@ -73,3 +73,8 @@ porta da variável `PORT`. Em produção use `wss://` (HTTPS), porque páginas H
 Para o jogo publicado já vir com o endereço certo, defina a variável `VITE_NET_URL` no build
 (ex.: `VITE_NET_URL=wss://toon-clash-server.onrender.com npm run build`). O jogador também pode
 digitar outro endereço na tela Online.
+
+No GitHub Pages, o CI lê essa variável das configurações do repositório: **Settings → Secrets and
+variables → Actions → Variables → New repository variable**, nome `VITE_NET_URL`, valor
+`wss://…`. O próximo push na `main` publica o jogo já apontando para o servidor. Sem a variável,
+o jogo tenta o mesmo host na porta 8787.
