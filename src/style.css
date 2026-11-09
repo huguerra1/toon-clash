@@ -948,3 +948,74 @@ h2 {
   font-family: var(--title-font) !important;
   letter-spacing: 0.05em;
 }
+
+/* ---------- Tutorial ---------- */
+
+.tutorial {
+  position: absolute;
+  left: 50%;
+  top: 110px;
+  transform: translateX(-50%);
+  width: min(520px, 92vw);
+  padding: 12px 18px;
+  text-align: center;
+}
+
+.tutorial h3 {
+  font-size: 2rem;
+  margin: 0 0 4px;
+  color: var(--yellow);
+}
+
+.tutorial p {
+  margin: 4px 0;
+}
+
+.tutorial .step {
+  font-size: 0.8rem;
+  opacity: 0.8;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.tutorial .keys {
+  display: inline-block;
+  font-weight: 800;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  padding: 2px 10px;
+}
+
+.tutorial .progress {
+  height: 12px;
+  border: 2px solid var(--ink);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.15);
+  overflow: hidden;
+  margin-top: 8px;
+}
+
+.tutorial .progress div {
+  height: 100%;
+  background: var(--p1);
+  transition: width 0.15s;
+}
+
+.tutorial.done {
+  border-color: var(--p1);
+}
+
+.tutorial.done h3 {
+  color: var(--p1);
+}
+
+.tutorial-done {
+  text-align: center;
+}
+
+@media (max-width: 760px) {
+  .tutorial {
+    top: 80px;
+    font-size: 0.85rem;
+  }
+}

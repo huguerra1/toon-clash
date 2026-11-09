@@ -16,19 +16,28 @@ import type { Controls, MenuEvent } from './core/controls';
 import { type PlayerInput, emptyInput, mergeInputs } from './core/input';
 import type { GameEvent } from './game/events';
 import { type MatchState, createMatch, defaultConfig, stepMatch } from './game/match';
+import {
+  LESSONS,
+  createTutorial,
+  skipLesson,
+  tutorialDummyInput,
+  updateTutorial,
+} from './game/tutorial';
 import type { GameRenderer } from './render/scene';
 import { STAGES, type StageId } from './render/stages';
 import { Hud } from './ui/hud';
 import { Menu, type MenuItem } from './ui/menu';
 import { BUTTON_NAMES, moveList } from './ui/notation';
+import { TutorialView } from './ui/tutorial-view';
 
-export type Mode = 'arcade' | 'versus' | 'cpu' | 'training' | 'online';
+export type Mode = 'arcade' | 'versus' | 'cpu' | 'training' | 'tutorial' | 'online';
 
 /** Quem controla cada lado da luta. */
 export type InputSource =
   | { kind: 'local'; player: 0 | 1 | 'both' }
   | { kind: 'cpu'; brain: CpuBrain }
   | { kind: 'dummy' }
+  | { kind: 'script'; input: (match: MatchState) => PlayerInput }
   | { kind: 'remote' };
 
 /** O que o módulo online fornece para a partida. */
@@ -195,6 +204,11 @@ export class App {
     this.audio.playMusic('menu');
     this.match = this.showcase(['kai', 'solara'], 'rooftop');
     const items: MenuItem[] = [
+      {
+        label: 'Tutorial',
+        hint: 'Aprenda a jogar em poucos minutos',
+        action: () => this.startTutorial(),
+      },
       {
         label: 'Arcade',
         hint: '1 jogador contra todos, até o chefe',
@@ -522,14 +536,15 @@ export class App {
   /** Começa (ou recomeça) a luta da sessão atual. */
   beginFight(): void {
     const s = this.session!;
-    const config = { ...defaultConfig(s.characters), training: s.mode === 'training' };
+    const training = s.mode === 'training' || s.mode === 'tutorial';
+    const config = { ...defaultConfig(s.characters), training };
     this.renderer.load(s.characters, s.stage);
     this.renderer.reset();
     this.match = createMatch(config);
     const labels: [string, string] =
       s.mode === 'versus'
         ? ['1P', '2P']
-        : s.mode === 'training'
+        : training
           ? ['VOCÊ', 'BONECO']
           : s.mode === 'online'
             ? (this.online?.labels ?? ['', ''])
@@ -554,6 +569,49 @@ export class App {
   }
 
   private dummyBrain: CpuBrain = createCpu('medio', 7);
+  private tutorial = createTutorial();
+  private tutorialView = new TutorialView();
+
+  /** Tutorial: Kai Volt contra um boneco que muda de comportamento a cada lição. */
+  startTutorial(): void {
+    this.tutorial = createTutorial();
+    this.tutorialView = new TutorialView();
+    this.session = {
+      mode: 'tutorial',
+      characters: ['kai', 'nyx'],
+      stage: 'rooftop',
+      sources: [
+        { kind: 'local', player: 'both' },
+        {
+          kind: 'script',
+          input: (match) => {
+            const lesson = LESSONS[this.tutorial.lesson];
+            return lesson ? tutorialDummyInput(lesson.dummy, match, this.tickCount) : emptyInput();
+          },
+        },
+      ],
+      level: 'medio',
+    };
+    this.beginFight();
+    this.tutorialView.update(this.tutorial);
+  }
+
+  private tutorialDoneScreen(): Screen {
+    const el = html(
+      'div',
+      'screen',
+      `<div class="panel tutorial-done">
+         <h2>Tutorial completo!</h2>
+         <p>Você já sabe andar, pular, defender, fazer combos, especiais, arremessos e anti-aéreos.</p>
+         <p>Dica: no menu de pausa fica a lista de golpes de cada lutador. Cada um tem 3 especiais e uma
+         Toonality para fazer quando aparecer "ACABE COM ELE/ELA!".</p>
+         <p class="blink">ENTER para voltar ao menu</p>
+       </div>`,
+    );
+    const back = () => this.show(this.mainMenu());
+    el.addEventListener('click', back);
+    return { el, handle: (e) => (e.action === 'confirm' || e.action === 'pause') && back() };
+  }
 
   private inputFor(side: 0 | 1, source: InputSource): PlayerInput {
     switch (source.kind) {
@@ -567,6 +625,8 @@ export class App {
         return this.dummy === 'cpu'
           ? cpuInput(this.dummyBrain, this.match, side)
           : dummyInput(this.dummy, this.match, side, this.tickCount);
+      case 'script':
+        return source.input(this.match);
       case 'remote':
         return emptyInput();
     }
@@ -574,6 +634,7 @@ export class App {
 
   fightScreen(): Screen {
     const el = html('div', 'screen fight-screen');
+    if (this.session?.mode === 'tutorial') el.appendChild(this.tutorialView.el);
     let resultsShown = false;
     return {
       el,
@@ -585,6 +646,12 @@ export class App {
         const s = this.session!;
         if (s.mode === 'online') this.online?.tick();
         else this.advance([this.inputFor(0, s.sources[0]), this.inputFor(1, s.sources[1])]);
+        if (s.mode === 'tutorial') {
+          const finished = updateTutorial(this.tutorial, this.match, this.match.events);
+          this.tutorialView.update(this.tutorial);
+          if (finished) this.show(this.tutorialDoneScreen());
+          return;
+        }
         if (
           this.match.phase === 'matchOver' &&
           this.match.phaseTick >= RESULTS_DELAY &&
@@ -616,6 +683,7 @@ export class App {
   private openPause(): void {
     const s = this.session!;
     const training = s.mode === 'training';
+    const tutorial = s.mode === 'tutorial';
     const close = () => {
       menu.el.remove();
       this.paused = null;
@@ -634,6 +702,17 @@ export class App {
     const items: MenuItem[] = [
       { label: 'Continuar', action: close },
       { label: 'Lista de golpes', action: () => this.showMoves(menu) },
+      ...(tutorial
+        ? [
+            {
+              label: 'Pular lição',
+              action: () => {
+                skipLesson(this.tutorial);
+                close();
+              },
+            },
+          ]
+        : []),
       ...(training
         ? [
             {
