@@ -70,6 +70,20 @@ Render, Railway, Fly.io ou uma VPS. Ele só precisa de `npm install` e `npm run 
 porta da variável `PORT`. Em produção use `wss://` (HTTPS), porque páginas HTTPS não podem abrir
 `ws://`.
 
+### No Render (grátis, já configurado)
+
+O `render.yaml` na raiz descreve o serviço (`toon-clash-server`, plano grátis, região Virginia).
+
+1. Entre em [render.com](https://render.com) com a conta do GitHub.
+2. **New → Blueprint**, escolha o repositório `toon-clash` e confirme.
+3. Quando o deploy terminar, copie o endereço do serviço (`https://toon-clash-server-xxxx.onrender.com`).
+   Abrir esse endereço no navegador deve mostrar `Toon Clash server ok`.
+4. Crie a variável `VITE_NET_URL` (abaixo) com o mesmo endereço trocando `https://` por `wss://`.
+
+O plano grátis dorme depois de 15 minutos sem uso. A primeira conexão depois disso leva até
+~1 minuto (a tela Online avisa "Acordando o servidor…"); as seguintes são imediatas. O Render só
+publica o servidor de novo quando `server/` ou o `package.json` mudam.
+
 Para o jogo publicado já vir com o endereço certo, defina a variável `VITE_NET_URL` no build
 (ex.: `VITE_NET_URL=wss://toon-clash-server.onrender.com npm run build`). O jogador também pode
 digitar outro endereço na tela Online.

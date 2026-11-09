@@ -90,6 +90,10 @@ function lobbyScreen(app: App): Screen {
     busy = true;
     const url = server.value.trim();
     setStatus('Conectando…');
+    const slow = setTimeout(
+      () => setStatus('Acordando o servidor… isso pode levar até 1 minuto na primeira vez.'),
+      4000,
+    );
     try {
       await client.connect(url);
       rememberServerUrl(url);
@@ -100,6 +104,8 @@ function lobbyScreen(app: App): Screen {
         `${(error as Error).message} Confira o endereço e se o servidor está rodando (npm run server).`,
         true,
       );
+    } finally {
+      clearTimeout(slow);
     }
   };
   const create = () => void connectAnd(() => client.send({ type: 'create' }));
