@@ -1,0 +1,45 @@
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: #1a1030;
+  color: #fff;
+  font-family: system-ui, sans-serif;
+}
+
+#game {
+  position: fixed;
+  inset: 0;
+}
+
+#game canvas {
+  display: block;
+}
+
+.hud {
+  position: fixed;
+  top: 16px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  pointer-events: none;
+  text-shadow: 2px 2px 0 #000;
+}
+
+.hud h1 {
+  margin: 0;
+  font-size: clamp(1.5rem, 5vw, 3rem);
+  letter-spacing: 0.08em;
+  color: #ffc93d;
+}
+
+.hud p {
+  margin: 4px 0 0;
+  font-size: 0.9rem;
+  opacity: 0.85;
+}
