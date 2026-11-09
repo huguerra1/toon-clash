@@ -49,7 +49,8 @@ export class NetClient {
       const timeout = setTimeout(() => {
         ws.close();
         reject(new Error('O servidor não respondeu.'));
-      }, 6000);
+        // O servidor grátis do Render dorme quando fica parado e leva até ~1 min para acordar.
+      }, 75_000);
       ws.onopen = () => {
         clearTimeout(timeout);
         this.pingTimer = setInterval(() => this.send({ type: 'ping', t: performance.now() }), 1000);

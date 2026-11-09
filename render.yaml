@@ -1,0 +1,20 @@
+# Servidor de salas do modo online no Render (plano grátis). Passo a passo em docs/ONLINE.md.
+services:
+  - type: web
+    name: toon-clash-server
+    runtime: node
+    plan: free
+    # Região mais perto do Brasil entre as do Render.
+    region: virginia
+    buildCommand: npm ci --omit=dev
+    startCommand: npm run server
+    healthCheckPath: /
+    envVars:
+      - key: NODE_VERSION
+        value: '22'
+    # Só publica de novo quando o servidor muda, não a cada mudança no jogo.
+    buildFilter:
+      paths:
+        - server/**
+        - package.json
+        - package-lock.json
