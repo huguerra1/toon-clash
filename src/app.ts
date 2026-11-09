@@ -928,6 +928,11 @@ export class App {
         action: () => (this.audio.muted = !this.audio.muted),
       },
       {
+        label: () =>
+          `Gráficos: ${this.renderer.quality === 'alto' ? 'alto (com brilho)' : 'baixo (mais leve)'}`,
+        action: () => this.renderer.setQuality(this.renderer.quality === 'alto' ? 'baixo' : 'alto'),
+      },
+      {
         label: 'Tela cheia',
         action: () => {
           if (document.fullscreenElement) void document.exitFullscreen();

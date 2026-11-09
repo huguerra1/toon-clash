@@ -4,7 +4,7 @@ export const feral = defineCharacter({
   id: 'feral',
   name: 'Feral',
   title: 'O Moleque Selvagem',
-  bio: 'Brincalhão de pele verde que vira qualquer bicho — de preferência um bem grande.',
+  bio: 'Escoteiro que comeu uma fruta encantada na trilha e agora vira qualquer bicho — de preferência um bem grande.',
   pronoun: 'ele',
   maxHealth: 1000,
   walkSpeed: 0.058,

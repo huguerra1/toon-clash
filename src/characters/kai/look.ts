@@ -2,16 +2,19 @@ import type { CharacterLook } from '../look';
 
 const base: CharacterLook = {
   skin: 0xf1c27d,
-  hair: 0x5a3825,
-  top: 0x1fa37a,
+  hair: 0x1b1b1b,
+  top: 0xd9452b,
   bottom: 0x2d3a4a,
   shoes: 0xf4f4f4,
-  accent: 0x7cff4f,
-  glow: 0x7cff4f,
-  hairStyle: 'spiky',
+  accent: 0x3dd6ff,
+  glow: 0x3dd6ff,
+  hairStyle: 'messy',
   scale: 0.95,
   bulk: 1,
   extras: ['watch', 'stripe'],
+  emblem: 'bolt',
+  personality: 'hero',
+  proportions: { head: 1.12, legs: 0.95 },
 };
 
 /** Kai, Rochedo (forma de pedra) e Faísca (forma elétrica). */
@@ -28,6 +31,8 @@ export const kaiLooks: CharacterLook[] = [
     scale: 1.1,
     bulk: 1.4,
     extras: ['watch', 'rocks'],
+    personality: 'brute',
+    proportions: { head: 0.95, arms: 1.15, torso: 1.1, legs: 0.9 },
   },
   {
     ...base,
@@ -40,5 +45,6 @@ export const kaiLooks: CharacterLook[] = [
     glow: 0x9ff7ff,
     bulk: 0.85,
     extras: ['watch', 'glowEyes', 'glowHands'],
+    proportions: { head: 1.05, legs: 1.08 },
   },
 ];

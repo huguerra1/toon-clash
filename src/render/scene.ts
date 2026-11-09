@@ -2,12 +2,15 @@ import * as THREE from 'three';
 import { getLook, LOOKS } from '../characters/looks';
 import { getCharacter } from '../characters/roster';
 import { ARENA_HALF_WIDTH, TOONALITY_TICKS } from '../combat/constants';
-import { currentMove } from '../combat/fighter';
-import type { CharacterId } from '../combat/types';
+import { type FighterState, currentMove } from '../combat/fighter';
+import type { CharacterId, MoveDef } from '../combat/types';
 import type { GameEvent } from '../game/events';
 import type { MatchState } from '../game/match';
 import { Effects } from './effects';
-import { FighterModel, type PropName } from './fighter-model';
+import { PostProcessing } from './post';
+import { type Quality, loadQuality, saveQuality } from './quality';
+import type { Personality } from '../characters/look';
+import { type Expression, FighterModel, type PropName } from './fighter-model';
 import { targetPose } from './poses';
 import { buildStage, type BuiltStage, type StageId } from './stages';
 import { disposeObject } from './toon-material';
@@ -40,6 +43,51 @@ const VISUAL_PROPS: Record<string, PropName> = {
 };
 const ALL_PROPS = [...new Set(Object.values(VISUAL_PROPS))];
 
+/** Cara do lutador conforme o que ele está fazendo. */
+function expressionFor(f: FighterState, special: boolean, personality?: Personality): Expression {
+  switch (f.state) {
+    case 'attack':
+      return special ? 'shout' : 'angry';
+    case 'block':
+    case 'blockstun':
+    case 'air':
+      return 'angry';
+    case 'hitstun':
+    case 'launched':
+    case 'thrown':
+    case 'knockdown':
+    case 'getup':
+      return 'pain';
+    case 'ko':
+      return 'ko';
+    case 'dizzy':
+      return 'dizzy';
+    case 'victory':
+    case 'toonality':
+      return 'happy';
+    default:
+      return personality === 'lazy' ? 'sleepy' : 'neutral';
+  }
+}
+
+/** Squash & stretch: estica ao subir no pulo, achata ao cair e ao levar golpe. */
+function stretchFor(f: FighterState, move: MoveDef | null): number {
+  switch (f.state) {
+    case 'air':
+      return f.vy > 0.1 ? 1.14 : f.vy < -0.12 ? 1.06 : 1;
+    case 'land':
+      return 0.8;
+    case 'hitstun':
+      return f.stateTick < 5 ? 0.86 : 1;
+    case 'attack':
+      if (move && f.stateTick >= move.startup && f.stateTick < move.startup + move.active)
+        return 1.05;
+      return move && f.stateTick < move.startup ? 0.95 : 1;
+    default:
+      return 1;
+  }
+}
+
 /** Desenha a partida. Não contém regra de jogo: só lê o MatchState e reage aos eventos. */
 export class GameRenderer {
   readonly renderer: THREE.WebGLRenderer;
@@ -48,6 +96,9 @@ export class GameRenderer {
   /** Grupo que segura a câmera (no modo VR a cabeça do usuário se move dentro dele). */
   readonly cameraRig = new THREE.Group();
   private readonly effects = new Effects();
+  /** Brilho pós-processado (bloom); desligado na qualidade 'baixo'. */
+  private readonly post: PostProcessing;
+  quality: Quality = loadQuality();
   private stage: BuiltStage | null = null;
   private models: [FighterModel[], FighterModel[]] = [[], []];
   private toonality: ToonalityPlayer | null = null;
@@ -68,6 +119,8 @@ export class GameRenderer {
     this.camera.position.set(0, 2.2, CAMERA_MIN_DISTANCE);
     this.scene.add(this.effects.group);
     this.addLights();
+    this.post = new PostProcessing(this.renderer, this.scene, this.camera);
+    this.setQuality(this.quality);
 
     this.resize();
     window.addEventListener('resize', () => this.resize());
@@ -201,13 +254,18 @@ export class GameRenderer {
       const victim = match.toonality !== null && match.toonality.player !== index;
       model.root.position.set(f.x, f.y, 0);
       model.root.rotation.set(0, f.facing === 1 ? -TURN_TO_CAMERA : Math.PI + TURN_TO_CAMERA, 0);
-      model.body.scale.setScalar(model.look.scale);
-
       const state = victim && f.state === 'toonality' ? { ...f, state: 'dizzy' as const } : f;
-      const { pose, rate } = targetPose(state, def, this.time + index * 0.7);
+      const { pose, rate } = targetPose(
+        state,
+        def,
+        this.time + index * 0.7,
+        model.look.personality,
+      );
       model.applyPose(pose, rate, dt);
 
       const move = currentMove(f, def);
+      model.setExpression(expressionFor(state, move?.special === true, model.look.personality));
+      model.setStretch(stretchFor(state, move), dt);
       const visualProp = move?.visual ? VISUAL_PROPS[move.visual] : undefined;
       for (const prop of ALL_PROPS) model.setProp(prop, prop === visualProp);
       model.setProp('stars', f.state === 'dizzy' && !match.toonality);
@@ -229,7 +287,18 @@ export class GameRenderer {
     this.effects.update(dt);
     this.stage?.update(this.time);
     if (!presenting) this.followFighters(match);
-    this.renderer.render(this.scene, this.camera);
+    this.post.render();
+  }
+
+  /** Alto: brilho e sombras suaves; baixo: mais leve para celular. */
+  setQuality(quality: Quality): void {
+    this.quality = quality;
+    saveQuality(quality);
+    this.post.enabled = quality === 'alto';
+    this.renderer.shadowMap.type =
+      quality === 'alto' ? THREE.PCFSoftShadowMap : THREE.BasicShadowMap;
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, quality === 'alto' ? 2 : 1.25));
+    this.resize();
   }
 
   private activeModel(match: MatchState, i: 0 | 1): FighterModel | undefined {
@@ -337,6 +406,7 @@ export class GameRenderer {
     const parent = this.renderer.domElement.parentElement!;
     const { clientWidth: width, clientHeight: height } = parent;
     this.renderer.setSize(width, height);
+    this.post?.setSize(width, height);
     this.camera.aspect = width / height;
     this.camera.updateProjectionMatrix();
   }

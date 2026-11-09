@@ -4,7 +4,7 @@ export const zhaar = defineCharacter({
   id: 'zhaar',
   name: 'Warlord Zhaar',
   title: 'O Conquistador de Galáxias',
-  bio: 'Senhor da guerra intergaláctico que quer o relógio cósmico — e a Terra de brinde.',
+  bio: 'Senhor da guerra intergaláctico que quer o bracelete cósmico — e a Terra de brinde.',
   pronoun: 'ele',
   boss: true,
   maxHealth: 1400,

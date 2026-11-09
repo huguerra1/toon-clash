@@ -4,7 +4,7 @@ export const ferrum = defineCharacter({
   id: 'ferrum',
   name: 'Ferrum',
   title: 'O Tanque de Titânio',
-  bio: 'Metade garoto, metade máquina. Lento, pesado e com um canhão sônico no braço.',
+  bio: 'Piloto mirim que vive dentro de uma armadura de construção turbinada. Lento, pesado e com um canhão de plasma no braço.',
   pronoun: 'ele',
   maxHealth: 1100,
   walkSpeed: 0.042,
@@ -13,7 +13,7 @@ export const ferrum = defineCharacter({
   damageMul: 1.15,
   moves: {
     sonic_cannon: {
-      name: 'Canhão Sônico',
+      name: 'Canhão de Plasma',
       anim: 'projectile',
       startup: 18,
       active: 1,

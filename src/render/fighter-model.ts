@@ -1,5 +1,7 @@
 import * as THREE from 'three';
 import type { CharacterLook } from '../characters/look';
+import { emblemTexture } from './emblems';
+import { type MouthShape, mouthTexture } from './face-textures';
 import { addOutline } from './toon-material';
 
 export const JOINTS = [
@@ -41,7 +43,34 @@ export type PropName =
 
 const THIGH = 0.42;
 const SHIN = 0.4;
-export const HIP_HEIGHT = THIGH + SHIN + 0.06;
+
+export type Expression =
+  'neutral' | 'angry' | 'shout' | 'pain' | 'happy' | 'dizzy' | 'sleepy' | 'ko';
+
+/** lid: abertura dos olhos (0..1); brow: inclinação (positivo = bravo); browY: altura extra. */
+const EXPRESSIONS: Record<
+  Expression,
+  { lid: number; brow: number; browY: number; mouth: MouthShape }
+> = {
+  neutral: { lid: 1, brow: 0.15, browY: 0, mouth: 'neutral' },
+  angry: { lid: 0.72, brow: 0.55, browY: -0.012, mouth: 'grin' },
+  shout: { lid: 1, brow: 0.45, browY: 0.01, mouth: 'shout' },
+  pain: { lid: 0.3, brow: -0.45, browY: 0.02, mouth: 'pain' },
+  happy: { lid: 0.75, brow: -0.25, browY: 0.025, mouth: 'smile' },
+  dizzy: { lid: 0.6, brow: -0.3, browY: 0, mouth: 'wavy' },
+  sleepy: { lid: 0.35, brow: -0.1, browY: -0.006, mouth: 'sleepy' },
+  ko: { lid: 0, brow: -0.4, browY: 0, mouth: 'pain' },
+};
+
+/** Parte que balança com mola (capa, cabelo, cachecol, orelhas). */
+interface Dangler {
+  pivot: THREE.Object3D;
+  rest: number;
+  angle: number;
+  velocity: number;
+  /** Quanto a parte reage ao movimento do corpo. */
+  gain: number;
+}
 
 const gradient = (() => {
   const tones = new Uint8Array([90, 170, 255]);
@@ -65,8 +94,27 @@ export class FighterModel {
   private readonly props = new Map<PropName, THREE.Object3D[]>();
   private readonly hands: THREE.Object3D[] = [];
   private flash = 0;
+  /** Altura do quadril, depende do tamanho das pernas de cada lutador. */
+  readonly hipHeight: number;
+  private readonly thigh: number;
+  private readonly shin: number;
+  private readonly eyes: { pupil: THREE.Object3D | null; lid: THREE.Object3D }[] = [];
+  private readonly brows: { mesh: THREE.Object3D; side: 1 | -1; y: number }[] = [];
+  private mouth: THREE.Mesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial> | null = null;
+  private expression: Expression = 'neutral';
+  private readonly danglers: Dangler[] = [];
+  private lastX: number | null = null;
+  private lastY = 0;
+  private blinkIn = 2 + Math.random() * 3;
+  private blinkFor = 0;
+  private time = 0;
+  private stretch = 1;
 
   constructor(readonly look: CharacterLook) {
+    const legs = look.proportions?.legs ?? 1;
+    this.thigh = THIGH * legs;
+    this.shin = SHIN * legs;
+    this.hipHeight = this.thigh + this.shin + 0.06;
     this.root.add(this.body);
     this.body.scale.setScalar(look.scale);
     this.body.add(this.hips);
@@ -82,7 +130,7 @@ export class FighterModel {
     const k = 1 - Math.pow(1 - rate, dt * 60);
     for (const key of POSE_KEYS) this.pose[key] += (target[key] - this.pose[key]) * k;
     const p = this.pose;
-    this.hips.position.y = HIP_HEIGHT + p.hipsY;
+    this.hips.position.y = this.hipHeight + p.hipsY;
     this.hips.rotation.z = p.hipsRot;
     this.joints.spine.rotation.z = -p.spine;
     this.joints.head.rotation.z = -p.head;
@@ -119,6 +167,92 @@ export class FighterModel {
     }
     const stars = this.props.get('stars')?.[0];
     if (stars?.visible) stars.rotation.y += dt * 4;
+    this.time += dt;
+    this.updateFace(dt);
+    this.updateDanglers(dt);
+  }
+
+  /** Muda a cara do lutador (olhos, sobrancelhas e boca). */
+  setExpression(expression: Expression): void {
+    if (expression === this.expression) return;
+    this.expression = expression;
+    const e = EXPRESSIONS[expression];
+    if (this.mouth) this.mouth.material.map = mouthTexture(e.mouth);
+    for (const brow of this.brows) {
+      brow.mesh.rotation.x = -brow.side * e.brow;
+      brow.mesh.position.y = brow.y + e.browY;
+    }
+  }
+
+  /**
+   * Esticar/achatar (squash & stretch), mantendo o volume aproximado.
+   * stretch > 1 estica na vertical; < 1 achata.
+   */
+  setStretch(target: number, dt: number): void {
+    // Chega rápido no alvo e volta com um leve "boing".
+    this.stretch += (target - this.stretch) * Math.min(1, dt * 22);
+    const s = this.stretch;
+    const side = 1 / Math.sqrt(s);
+    this.body.scale.set(this.look.scale * side, this.look.scale * s, this.look.scale * side);
+  }
+
+  private updateFace(dt: number): void {
+    const e = EXPRESSIONS[this.expression];
+    this.blinkIn -= dt;
+    if (this.blinkIn <= 0) {
+      this.blinkFor = 0.12;
+      this.blinkIn = 2 + Math.random() * 3.5;
+    }
+    this.blinkFor = Math.max(0, this.blinkFor - dt);
+    const open = this.blinkFor > 0 ? 0 : e.lid;
+    // Pálpebra = meia esfera girando na frente do olho: -90° fecha, +90° abre.
+    const angle = -Math.PI / 2 + open * Math.PI;
+    for (const eye of this.eyes) {
+      eye.lid.rotation.z += (angle - eye.lid.rotation.z) * Math.min(1, dt * 25);
+      if (!eye.pupil) continue;
+      if (this.expression === 'dizzy') {
+        eye.pupil.position.y = Math.sin(this.time * 8) * 0.025;
+        eye.pupil.position.z = Math.cos(this.time * 8) * 0.025;
+      } else {
+        eye.pupil.position.y = 0;
+        eye.pupil.position.z = 0;
+      }
+    }
+  }
+
+  /** Molas simples: as partes soltas atrasam e balançam conforme o corpo se move. */
+  private updateDanglers(dt: number): void {
+    const x = this.root.position.x;
+    const y = this.root.position.y;
+    const facing = Math.cos(this.root.rotation.y) >= 0 ? 1 : -1;
+    const vx = this.lastX === null ? 0 : ((x - this.lastX) / Math.max(dt, 1e-3)) * facing;
+    const vy = (y - this.lastY) / Math.max(dt, 1e-3);
+    this.lastX = x;
+    this.lastY = y;
+    const steps = Math.min(4, Math.ceil(dt * 120));
+    const h = dt / steps;
+    for (const d of this.danglers) {
+      // Andar para a frente joga a parte para trás; subir a puxa para baixo.
+      const target = d.rest + THREE.MathUtils.clamp(vx * 0.12 - vy * 0.06, -0.9, 0.9) * d.gain;
+      for (let s = 0; s < steps; s++) {
+        d.velocity += ((target - d.angle) * 90 - d.velocity * 9) * h;
+        d.angle += d.velocity * h;
+      }
+      d.pivot.rotation.z = d.angle;
+    }
+  }
+
+  /** Cria um ponto de articulação para uma parte que balança. */
+  private dangler(
+    parent: THREE.Object3D,
+    position: [number, number, number],
+    rest: number,
+    gain = 1,
+  ): THREE.Group {
+    const pivot = this.group(parent, position);
+    pivot.rotation.z = rest;
+    this.danglers.push({ pivot, rest, angle: rest, velocity: 0, gain });
+    return pivot;
   }
 
   /** Pinta o modelo inteiro de uma cor (ex.: virar troféu de ouro). */
@@ -166,6 +300,8 @@ export class FighterModel {
     const emissive = new THREE.Color(glow ? color : 0x000000);
     if (glow) emissive.multiplyScalar(0.7);
     m.emissive.copy(emissive);
+    // Partes que brilham ficam bem acima da luz normal, para só elas ativarem o bloom.
+    if (glow) m.emissiveIntensity = 3;
     this.baseEmissive.set(m, emissive);
     this.materials.push(m);
     return m;
@@ -196,18 +332,34 @@ export class FighterModel {
     const { look } = this;
     const b = look.bulk;
     const has = (extra: (typeof look.extras)[number]) => look.extras.includes(extra);
+    const t = look.proportions?.torso ?? 1;
 
     // Tronco
     const spine = this.group(this.hips, [0, 0.02, 0]);
     this.joints.spine = spine;
     this.mesh(new THREE.SphereGeometry(0.19 * b, 14, 10), look.bottom, spine, [0, 0.02, 0]);
-    const torso = this.mesh(
-      new THREE.CapsuleGeometry(0.2 * b, 0.22, 6, 14),
-      look.top,
-      spine,
-      [0, 0.3, 0],
-    );
+    const torso = this.mesh(new THREE.CapsuleGeometry(0.2 * b, 0.22 * t, 6, 14), look.top, spine, [
+      0,
+      0.3 * t,
+      0,
+    ]);
     torso.scale.set(0.85, 1, 1.05);
+    // Gola: dá acabamento entre o tronco e o pescoço.
+    this.mesh(new THREE.TorusGeometry(0.1, 0.03, 6, 16), look.top, spine, [0, 0.52 * t, 0], {
+      outline: 0,
+    }).rotation.x = Math.PI / 2;
+    if (look.emblem) {
+      const emblem = new THREE.Mesh(
+        new THREE.PlaneGeometry(0.17, 0.17),
+        new THREE.MeshBasicMaterial({
+          map: emblemTexture(look.emblem, look.accent, look.top),
+          transparent: true,
+        }),
+      );
+      emblem.position.set(0.172 * b + 0.004, 0.34 * t, 0);
+      emblem.rotation.y = Math.PI / 2;
+      spine.add(emblem);
+    }
     if (has('stripe')) {
       this.mesh(new THREE.BoxGeometry(0.06, 0.34, 0.42 * b), 0xf4f4f4, spine, [0.15 * b, 0.3, 0], {
         outline: 0,
@@ -230,12 +382,8 @@ export class FighterModel {
       }).rotation.x = Math.PI / 2;
     }
     if (has('cape')) {
-      const cape = this.mesh(new THREE.BoxGeometry(0.04, 0.95, 0.5 * b), look.hair, spine, [
-        -0.2 * b,
-        0.05,
-        0,
-      ]);
-      cape.rotation.z = -0.12;
+      const pivot = this.dangler(spine, [-0.18 * b, 0.5 * t, 0], -0.12, 1.2);
+      this.mesh(new THREE.BoxGeometry(0.04, 0.95, 0.5 * b), look.hair, pivot, [0, -0.47, 0]);
     }
     if (has('rocks')) {
       for (const [x, y, z] of [
@@ -248,7 +396,8 @@ export class FighterModel {
     }
 
     // Cabeça
-    const head = this.group(spine, [0, 0.55, 0]);
+    const head = this.group(spine, [0, 0.55 * t, 0]);
+    head.scale.setScalar(look.proportions?.head ?? 1);
     this.joints.head = head;
     this.mesh(new THREE.CylinderGeometry(0.07, 0.08, 0.12, 8), look.skin, head, [0, 0.0, 0], {
       outline: 0,
@@ -282,10 +431,12 @@ export class FighterModel {
     }
     if (has('ears')) {
       for (const side of [1, -1]) {
-        const ear = this.mesh(new THREE.ConeGeometry(0.07, 0.22, 6), look.skin, head, [
+        // Orelhas pontudas com mola: balançam quando o lutador pula ou anda.
+        const pivot = this.dangler(head, [0, 0.3, side * 0.2], 0, 0.6);
+        const ear = this.mesh(new THREE.ConeGeometry(0.07, 0.22, 6), look.hair, pivot, [
           0,
-          0.3,
-          side * 0.24,
+          0,
+          side * 0.06,
         ]);
         ear.rotation.x = side * 1.2;
       }
@@ -327,34 +478,43 @@ export class FighterModel {
     this.addProp('horn', horn);
 
     // Braços
+    const a = look.proportions?.arms ?? 1;
     const shoulderZ = 0.25 * b + 0.05;
+    const shoulderY = 0.45 * t;
     if (has('shoulderPads')) {
       for (const z of [shoulderZ, -shoulderZ]) {
-        this.mesh(new THREE.SphereGeometry(0.14 * b, 10, 8), look.top, spine, [0, 0.47, z]);
+        this.mesh(new THREE.SphereGeometry(0.14 * b, 10, 8), look.top, spine, [
+          0,
+          shoulderY + 0.02,
+          z,
+        ]);
       }
     }
     for (const side of ['A', 'B'] as const) {
       const z = side === 'A' ? shoulderZ : -shoulderZ;
-      const arm = this.group(spine, [0, 0.45, z]);
-      this.mesh(new THREE.CapsuleGeometry(0.075 * b, 0.18, 4, 10), look.top, arm, [0, -0.14, 0]);
-      const fore = this.group(arm, [0, -0.3, 0]);
+      const arm = this.group(spine, [0, shoulderY, z]);
+      this.mesh(new THREE.CapsuleGeometry(0.075 * b, 0.18 * a, 4, 10), look.top, arm, [
+        0,
+        -0.14 * a,
+        0,
+      ]);
+      const fore = this.group(arm, [0, -0.3 * a, 0]);
       const gauntlet = has('gauntlets');
       const skinColor = gauntlet ? look.accent : look.skin;
       this.mesh(
-        new THREE.CapsuleGeometry(gauntlet ? 0.085 : 0.065 * b, 0.16, 4, 10),
+        new THREE.CapsuleGeometry(gauntlet ? 0.085 : 0.065 * b, 0.16 * a, 4, 10),
         skinColor,
         fore,
-        [0, -0.13, 0],
+        [0, -0.13 * a, 0],
       );
       const glowHands = has('glowHands');
-      const hand = this.mesh(
-        new THREE.SphereGeometry(gauntlet ? 0.11 : 0.085 * b, 12, 10),
-        glowHands ? look.glow : skinColor,
+      const hand = this.buildHand(
         fore,
-        [0, -0.3, 0],
-        {
-          glow: glowHands,
-        },
+        -0.3 * a,
+        gauntlet ? 0.11 : 0.085 * b,
+        glowHands ? look.glow : skinColor,
+        glowHands,
+        side === 'A' ? 1 : -1,
       );
       this.hands.push(hand);
       if (side === 'A' && has('watch')) {
@@ -388,30 +548,51 @@ export class FighterModel {
     this.buildArmProps();
 
     // Pernas
+    const thigh = this.thigh;
+    const shinLength = this.shin;
     for (const side of ['A', 'B'] as const) {
       const z = (side === 'A' ? 1 : -1) * 0.11 * b;
       const leg = this.group(this.hips, [0, -0.02, z]);
-      this.mesh(new THREE.CapsuleGeometry(0.09 * b, 0.24, 4, 10), look.bottom, leg, [
+      this.mesh(new THREE.CapsuleGeometry(0.09 * b, thigh - 0.18, 4, 10), look.bottom, leg, [
         0,
-        -THIGH / 2,
-        0,
-      ]);
-      const shin = this.group(leg, [0, -THIGH, 0]);
-      this.mesh(new THREE.CapsuleGeometry(0.075 * b, 0.24, 4, 10), look.bottom, shin, [
-        0,
-        -SHIN / 2 + 0.02,
+        -thigh / 2,
         0,
       ]);
-      this.mesh(new THREE.BoxGeometry(0.26, 0.1, 0.14 * b), look.shoes, shin, [
-        0.06,
-        -SHIN - 0.01,
+      const shin = this.group(leg, [0, -thigh, 0]);
+      this.mesh(new THREE.CapsuleGeometry(0.075 * b, shinLength - 0.16, 4, 10), look.bottom, shin, [
+        0,
+        -shinLength / 2 + 0.02,
         0,
       ]);
+      // Tênis de desenho: biqueira arredondada + sola clara.
+      this.mesh(new THREE.BoxGeometry(0.24, 0.1, 0.14 * b), look.shoes, shin, [
+        0.05,
+        -shinLength - 0.01,
+        0,
+      ]);
+      this.mesh(
+        new THREE.SphereGeometry(0.075 * b, 10, 8),
+        look.shoes,
+        shin,
+        [0.16, -shinLength - 0.02, 0],
+        {
+          outline: 0.015,
+        },
+      ).scale.set(1, 0.75, 0.95);
+      this.mesh(
+        new THREE.BoxGeometry(0.3, 0.03, 0.15 * b),
+        0xf2f2f2,
+        shin,
+        [0.07, -shinLength - 0.065, 0],
+        {
+          outline: 0.01,
+        },
+      );
       const jet = this.mesh(
         new THREE.ConeGeometry(0.08, 0.3, 8),
         0xff9a2e,
         shin,
-        [0, -SHIN - 0.2, 0],
+        [0, -shinLength - 0.2, 0],
         {
           glow: true,
           outline: 0,
@@ -424,29 +605,100 @@ export class FighterModel {
     }
   }
 
+  /** Olhos com pálpebra e pupila, sobrancelhas e boca trocável (expressões). */
   private buildFace(head: THREE.Group, glowEyes: boolean, visor: boolean): void {
+    const { look } = this;
+    const snout = look.extras.includes('snout');
     if (visor) {
-      this.mesh(new THREE.BoxGeometry(0.06, 0.07, 0.3), this.look.accent, head, [0.23, 0.25, 0], {
+      this.mesh(new THREE.BoxGeometry(0.06, 0.07, 0.3), look.accent, head, [0.23, 0.25, 0], {
         glow: true,
         outline: 0.015,
       });
-      return;
-    }
-    for (const z of [0.085, -0.085]) {
-      if (glowEyes) {
-        this.mesh(new THREE.SphereGeometry(0.055, 10, 8), this.look.glow, head, [0.21, 0.25, z], {
-          glow: true,
-          outline: 0.012,
-        });
-        continue;
+    } else {
+      for (const side of [1, -1] as const) {
+        const z = side * 0.085;
+        const eye = this.group(head, [0.2, 0.25, z]);
+        const radius = glowEyes ? 0.058 : 0.068;
+        this.mesh(
+          new THREE.SphereGeometry(radius, 14, 10),
+          glowEyes ? look.glow : 0xffffff,
+          eye,
+          [0, 0, 0],
+          {
+            glow: glowEyes,
+            outline: 0.012,
+          },
+        );
+        let pupil: THREE.Group | null = null;
+        if (!glowEyes) {
+          pupil = this.group(eye, [0, 0, 0]);
+          this.mesh(new THREE.SphereGeometry(0.034, 10, 8), 0x111111, pupil, [0.052, 0, 0], {
+            outline: 0,
+          });
+          // Brilhinho no olho, típico de desenho animado.
+          this.mesh(new THREE.SphereGeometry(0.011, 6, 4), 0xffffff, pupil, [0.08, 0.016, 0.01], {
+            outline: 0,
+          });
+        }
+        // Pálpebra: meia esfera da cor da pele que gira para cobrir o olho.
+        const lid = this.mesh(
+          new THREE.SphereGeometry(radius * 1.12, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2),
+          look.skin,
+          eye,
+          [0, 0, 0],
+          { outline: 0 },
+        );
+        lid.rotation.z = Math.PI / 2;
+        this.eyes.push({ pupil, lid });
+        const browY = 0.36;
+        const brow = this.mesh(new THREE.BoxGeometry(0.028, 0.03, 0.12), darker(look.hair), head, [
+          0.215,
+          browY,
+          z,
+        ]);
+        brow.rotation.order = 'ZXY';
+        brow.rotation.z = -0.35;
+        this.brows.push({ mesh: brow, side, y: browY });
       }
-      this.mesh(new THREE.SphereGeometry(0.065, 12, 10), 0xffffff, head, [0.2, 0.25, z], {
-        outline: 0.012,
-      });
-      this.mesh(new THREE.SphereGeometry(0.032, 8, 6), 0x111111, head, [0.255, 0.25, z], {
-        outline: 0,
-      });
     }
+    const mouth = new THREE.Mesh(
+      new THREE.PlaneGeometry(0.17, 0.085),
+      new THREE.MeshBasicMaterial({ map: mouthTexture('neutral'), transparent: true }),
+    );
+    mouth.position.set(snout ? 0.348 : 0.248, snout ? 0.085 : 0.115, 0);
+    mouth.rotation.y = Math.PI / 2;
+    head.add(mouth);
+    this.mouth = mouth;
+    this.expression = 'ko';
+    this.setExpression('neutral');
+  }
+
+  /** Mão de luva de desenho: palma arredondada e polegar. */
+  private buildHand(
+    fore: THREE.Group,
+    y: number,
+    size: number,
+    color: number,
+    glow: boolean,
+    side: 1 | -1,
+  ): THREE.Group {
+    const hand = this.group(fore, [0, y, 0]);
+    this.mesh(new THREE.SphereGeometry(size, 12, 10), color, hand, [0, 0, 0], { glow }).scale.set(
+      1.05,
+      0.92,
+      1.15,
+    );
+    this.mesh(
+      new THREE.SphereGeometry(size * 0.42, 8, 6),
+      color,
+      hand,
+      [size * 0.55, size * 0.35, side * size * 0.75],
+      {
+        glow,
+        outline: 0.012,
+      },
+    );
+    return hand;
   }
 
   private buildHair(head: THREE.Group): void {
@@ -494,7 +746,13 @@ export class FighterModel {
         break;
       case 'long':
         cap(0.26, look.hair);
-        this.mesh(new THREE.BoxGeometry(0.14, 0.75, 0.44), look.hair, head, [-0.16, -0.02, 0]);
+        // Cabelo comprido preso pela nuca: balança com o movimento.
+        this.mesh(
+          new THREE.BoxGeometry(0.14, 0.75, 0.44),
+          look.hair,
+          this.dangler(head, [-0.16, 0.33, 0], 0, 0.8),
+          [0, -0.35, 0],
+        );
         break;
       case 'hood': {
         this.mesh(
@@ -592,13 +850,8 @@ export class FighterModel {
         spine,
         [0, 0.52, 0],
       ).rotation.x = Math.PI / 2;
-      const tail = this.mesh(
-        new THREE.BoxGeometry(0.06, 0.3, 0.1),
-        look.accent,
-        spine,
-        [-0.16, 0.38, 0.08],
-      );
-      tail.rotation.z = -0.4;
+      const tail = this.dangler(spine, [-0.12, 0.5, 0.08], -0.4, 1.4);
+      this.mesh(new THREE.BoxGeometry(0.06, 0.3, 0.1), look.accent, tail, [0, -0.15, 0]);
     }
     if (has('boombox')) {
       this.mesh(new THREE.BoxGeometry(0.2, 0.32, 0.5), 0x2a2a33, spine, [-0.3, 0.32, 0]);
@@ -697,6 +950,11 @@ export class FighterModel {
     }
     this.addProp('wings', wings);
   }
+}
+
+/** Cor um pouco mais escura (sobrancelhas). */
+function darker(color: number): number {
+  return new THREE.Color(color).multiplyScalar(0.6).getHex();
 }
 
 export function neutralPose(): Pose {

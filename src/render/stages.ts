@@ -57,6 +57,7 @@ function box(
 function glowMaterial(color: number, strength = 0.9): THREE.MeshToonMaterial {
   const m = createToonMaterial(color);
   m.emissive.setHex(color).multiplyScalar(strength);
+  m.emissiveIntensity = 2.5;
   return m;
 }
 

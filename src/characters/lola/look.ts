@@ -12,4 +12,7 @@ export const lolaLook: CharacterLook = {
   scale: 0.98,
   bulk: 0.9,
   extras: ['headphones', 'boombox'],
+  emblem: 'note',
+  personality: 'dancer',
+  proportions: { legs: 1.1, head: 1.05 },
 };

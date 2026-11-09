@@ -12,5 +12,7 @@ export const gelatinoLook: CharacterLook = {
   scale: 1.02,
   bulk: 1.25,
   extras: [],
+  personality: 'goofy',
+  proportions: { head: 1.1, legs: 0.8, arms: 1.1, torso: 0.95 },
   translucent: true,
 };

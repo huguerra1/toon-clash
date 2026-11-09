@@ -4,7 +4,7 @@ export const umbra = defineCharacter({
   id: 'umbra',
   name: 'Umbra',
   title: 'A Feiticeira do Crepúsculo',
-  bio: 'Quieta, de capuz e sem paciência: controla sombras e some no meio da luta.',
+  bio: 'Aprendiz de ilusionista que roubou o manto de um mágico. Controla sombras e some no meio da luta.',
   pronoun: 'ela',
   maxHealth: 950,
   walkSpeed: 0.05,

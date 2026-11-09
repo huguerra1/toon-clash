@@ -3,8 +3,8 @@ import { defineCharacter } from '../common';
 export const kai = defineCharacter({
   id: 'kai',
   name: 'Kai Volt',
-  title: 'O Garoto do Relógio Cósmico',
-  bio: 'Achou um relógio alienígena num acampamento e agora troca de forma no meio da briga.',
+  title: 'O Garoto do Bracelete Cósmico',
+  bio: 'Achou um bracelete cósmico dentro de um meteorito e agora troca de forma no meio da briga.',
   pronoun: 'ele',
   maxHealth: 1000,
   walkSpeed: 0.055,
@@ -69,7 +69,7 @@ export const kai = defineCharacter({
     { motion: ['D', 'D'], button: 'hp', move: 'shift_form' },
   ],
   toonality: {
-    name: 'Relógio Descontrolado',
+    name: 'Bracelete Descontrolado',
     motion: ['F', 'F', 'D'],
     button: 'hk',
     kind: 'shrink',

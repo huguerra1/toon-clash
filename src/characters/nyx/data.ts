@@ -3,8 +3,8 @@ import { defineCharacter } from '../common';
 export const nyx = defineCharacter({
   id: 'nyx',
   name: 'Nyx-R',
-  title: 'A Agente das Nanitas',
-  bio: 'Agente secreta com nanitas no sangue: os braços viram lâmina, martelo ou botas-foguete.',
+  title: 'A Engenheira do Enxame',
+  bio: 'Engenheira-prodígio com um enxame de microrrobôs no traje: viram lâmina, martelo ou botas-foguete.',
   pronoun: 'ela',
   maxHealth: 1000,
   walkSpeed: 0.055,
@@ -13,7 +13,7 @@ export const nyx = defineCharacter({
   damageMul: 1,
   moves: {
     nano_blade: {
-      name: 'Lâmina Nanita',
+      name: 'Lâmina do Enxame',
       anim: 'slash',
       startup: 12,
       active: 5,

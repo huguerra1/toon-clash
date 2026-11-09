@@ -12,4 +12,7 @@ export const pipocaLook: CharacterLook = {
   scale: 0.9,
   bulk: 0.95,
   extras: ['potHelmet', 'scarf', 'belt'],
+  emblem: 'crown',
+  personality: 'knight',
+  proportions: { head: 1.15, legs: 0.85 },
 };

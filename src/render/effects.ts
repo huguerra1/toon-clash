@@ -205,6 +205,7 @@ export class Effects {
     const group = new THREE.Group();
     const material = createToonMaterial(color);
     material.emissive.setHex(color).multiplyScalar(0.8);
+    material.emissiveIntensity = 3;
     let core: THREE.Mesh;
     switch (p.visual) {
       case 'star':

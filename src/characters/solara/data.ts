@@ -15,7 +15,7 @@ export const solara = defineCharacter({
   id: 'solara',
   name: 'Solara',
   title: 'A Princesa Estelar',
-  bio: 'Veio de um planeta distante, fala tudo ao contrário e solta estrelas pelas mãos.',
+  bio: 'Guardiã de um farol estelar em órbita. Desceu à Terra de férias e solta estrelas pelas mãos.',
   pronoun: 'ela',
   maxHealth: 950,
   walkSpeed: 0.06,

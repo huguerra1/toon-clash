@@ -44,4 +44,37 @@ export interface CharacterLook {
   extras: LookExtra[];
   /** Corpo semitransparente (gelatina, fantasma…). */
   translucent?: boolean;
+  /** Proporções do corpo (1 = padrão) — cada lutador com silhueta própria. */
+  proportions?: { head?: number; legs?: number; arms?: number; torso?: number };
+  /** Símbolo no peito da roupa. */
+  emblem?: EmblemShape;
+  /** Jeito de ficar em guarda e de comemorar. */
+  personality?: Personality;
 }
+
+export type EmblemShape =
+  | 'bolt'
+  | 'star'
+  | 'note'
+  | 'leaf'
+  | 'gear'
+  | 'drop'
+  | 'moon'
+  | 'crown'
+  | 'flame'
+  | 'wave'
+  | 'cassette'
+  | 'shield';
+
+export type Personality =
+  | 'hero'
+  | 'cool'
+  | 'mystic'
+  | 'brute'
+  | 'royal'
+  | 'wild'
+  | 'knight'
+  | 'goofy'
+  | 'lazy'
+  | 'dancer'
+  | 'villain';
