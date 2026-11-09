@@ -16,7 +16,10 @@ export interface RollbackOptions {
 
 export interface AdvanceResult {
   match: MatchState;
-  /** Eventos do frame novo (os de frames resimulados são descartados). */
+  /**
+   * Eventos do frame novo, mais os que só existem na linha do tempo corrigida pelo rollback
+   * (ex.: um golpe que a previsão errada não mostrou). Os que já foram mostrados não se repetem.
+   */
   events: GameEvent[];
   rolledBack: number;
 }
@@ -43,6 +46,8 @@ export class RollbackSession {
   private confirmedRemote = -1;
   private rollbackFrom: number | null = null;
   private lastLocalFrame = -1;
+  /** Eventos já mostrados em cada frame (por eventKey), para o rollback não repetir efeitos. */
+  private readonly shown = new Map<number, string[]>();
   private readonly checksums = new Map<number, number>();
   private readonly remoteChecksums = new Map<number, number>();
   private fresh: { frame: number; value: number }[] = [];
@@ -111,16 +116,24 @@ export class RollbackSession {
     if (!this.inputs[this.local].has(this.frame)) return null;
 
     let rolledBack = 0;
+    const events: GameEvent[] = [];
+    // Eventos mostrados nos frames refeitos. Um evento corrigido que "casa" com um deles já foi
+    // visto (mesmo que um ou dois frames antes ou depois) e não é mostrado de novo.
+    const pool: string[] = [];
     if (this.rollbackFrom !== null && this.rollbackFrom < this.frame) {
       const start = this.rollbackFrom;
+      for (let f = start; f < this.frame; f++) pool.push(...(this.shown.get(f) ?? []));
       for (let f = start; f < this.frame; f++) {
-        this.states.set(f + 1, this.simulate(f).match);
+        const { match } = this.simulate(f);
+        this.states.set(f + 1, match);
+        this.shown.set(f, collectNew(match.events, pool, events));
         rolledBack++;
       }
     }
     this.rollbackFrom = null;
 
-    const { match, events } = this.simulate(this.frame);
+    const { match } = this.simulate(this.frame);
+    this.shown.set(this.frame, collectNew(match.events, pool, events));
     this.frame++;
     this.states.set(this.frame, match);
     this.recordChecksums();
@@ -191,6 +204,7 @@ export class RollbackSession {
     const keepFrom = Math.min(this.frame, this.confirmedRemote + 1) - 2;
     for (const f of this.states.keys()) if (f < keepFrom) this.states.delete(f);
     for (const f of this.usedRemote.keys()) if (f < keepFrom) this.usedRemote.delete(f);
+    for (const f of this.shown.keys()) if (f < keepFrom) this.shown.delete(f);
     for (const map of this.inputs)
       for (const f of map.keys()) if (f < keepFrom - this.redundancy) map.delete(f);
     for (const map of [this.checksums, this.remoteChecksums])
@@ -198,17 +212,37 @@ export class RollbackSession {
   }
 }
 
-/** Hash rápido (FNV-1a) das partes do estado que importam para a partida. */
+/**
+ * Identidade de um evento sem posição nem valores (x, dano, combo), que mudam um pouco entre a
+ * linha do tempo prevista e a corrigida.
+ */
+function eventKey(e: GameEvent): string {
+  const who = 'player' in e ? e.player : 'attacker' in e ? e.attacker : '';
+  const what = 'kind' in e ? e.kind : 'move' in e ? e.move : 'visual' in e ? e.visual : '';
+  return `${e.type}|${who}|${what}`;
+}
+
+/**
+ * Põe em `out` os eventos do frame que não estão em `pool` (consumindo os que estão) e devolve
+ * as chaves de todos os eventos do frame.
+ */
+function collectNew(frameEvents: readonly GameEvent[], pool: string[], out: GameEvent[]): string[] {
+  return frameEvents.map((e) => {
+    const key = eventKey(e);
+    const at = pool.indexOf(key);
+    if (at >= 0) pool.splice(at, 1);
+    else out.push(e);
+    return key;
+  });
+}
+
+/**
+ * Hash rápido (FNV-1a) do estado inteiro, menos os eventos do tick: qualquer divergência
+ * (velocidade, stun, combo, forma, projéteis…) aparece já na próxima soma. JSON.stringify
+ * escreve números do mesmo jeito em qualquer navegador.
+ */
 export function checksum(m: MatchState): number {
-  const parts = [
-    m.tick,
-    m.round,
-    m.phase,
-    m.timer,
-    ...m.fighters.flatMap((f) => [f.x, f.y, f.health, f.state, f.stateTick]),
-    m.projectiles.length,
-  ];
-  const text = parts.join('|');
+  const text = JSON.stringify({ ...m, events: [] });
   let hash = 0x811c9dc5;
   for (let i = 0; i < text.length; i++) {
     hash ^= text.charCodeAt(i);
