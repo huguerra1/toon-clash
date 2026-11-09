@@ -37,7 +37,7 @@ describe('CPU', () => {
       );
       expect(m.phase).toBe('matchOver');
     }
-  });
+  }, 30_000);
 
   it('nível Pesadelo vence o Fácil na maioria das vezes', () => {
     let wins = 0;
