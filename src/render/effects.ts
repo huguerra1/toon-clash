@@ -39,6 +39,7 @@ export class Effects {
   private readonly star = new THREE.OctahedronGeometry(0.1);
   private readonly ring = new THREE.RingGeometry(0.3, 0.42, 32);
   private readonly puff = new THREE.SphereGeometry(0.12, 6, 5);
+  private readonly streak = new THREE.PlaneGeometry(0.8, 0.05);
   private wordIndex = 0;
   shake = 0;
 
@@ -64,6 +65,32 @@ export class Effects {
         spin: (Math.random() - 0.5) * 0.4,
         life: 22 + Math.random() * 14,
         grow: 0,
+        fade: true,
+      });
+    }
+  }
+
+  /** Risco branco curto na direção do golpe, que estica e some rápido (smear de desenho). */
+  swoosh(x: number, y: number, direction: number, heavy: boolean): void {
+    const material = new THREE.MeshBasicMaterial({
+      color: 0xffffff,
+      transparent: true,
+      opacity: 0.9,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+    });
+    for (let k = 0; k < (heavy ? 3 : 2); k++) {
+      const mesh = new THREE.Mesh(this.streak, k === 0 ? material : material.clone());
+      mesh.position.set(x - direction * 0.25, y + (k - 0.5) * 0.12, 0.5);
+      mesh.scale.set(heavy ? 1.3 : 1, 1, 1);
+      this.spawn(mesh, {
+        vx: direction * 0.06,
+        vy: 0,
+        vz: 0,
+        gravity: 0,
+        spin: 0,
+        life: heavy ? 10 : 7,
+        grow: 0.04,
         fade: true,
       });
     }

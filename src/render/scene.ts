@@ -25,7 +25,7 @@ import {
 } from '../ui/accessibility';
 import type { Personality } from '../characters/look';
 import { type Expression, FighterModel, type PropName } from './fighter-model';
-import { targetPose } from './poses';
+import { type HitReaction, targetPose } from './poses';
 import { buildStage, type BuiltStage, type StageId } from './stages';
 import { disposeObject } from './toon-material';
 import { ToonalityPlayer } from './toonality';
@@ -61,6 +61,21 @@ interface Point {
   x: number;
   y: number;
 }
+
+/** Golpes de soco/chute que ganham o risco de movimento no impacto. */
+const SWOOSH_ANIMS = new Set<string>([
+  'jab',
+  'cross',
+  'frontKick',
+  'roundhouse',
+  'crouchJab',
+  'uppercut',
+  'lowKick',
+  'sweep',
+  'airPunch',
+  'airKick',
+  'slash',
+]);
 
 /** Passo da caminhada por unidade andada (≈ 3 radianos por metro). */
 const WALK_PHASE_PER_UNIT = 3;
@@ -169,6 +184,14 @@ export class GameRenderer {
   private time = 0;
   /** Fase do ciclo de passos de cada lutador (avança com a distância andada). */
   private readonly walkPhase: [number, number] = [0, 0];
+  /** Último golpe recebido por cada lutador (para a reação de quem apanha). */
+  private readonly reactions: [HitReaction, HitReaction] = [
+    { heavy: false, high: true },
+    { heavy: false, high: true },
+  ];
+  private lastDefender: 0 | 1 | null = null;
+  /** Zoom de impacto da câmera (1 logo após um golpe forte, 0 em repouso). */
+  private cameraPunch = 0;
   private loadedStage: StageId | null = null;
   private loadedCharacters = '';
 
@@ -247,6 +270,11 @@ export class GameRenderer {
         case 'hit': {
           const defender = (1 - e.attacker) as 0 | 1;
           this.activeModel(match, defender)?.hitFlash();
+          const target = match.fighters[defender];
+          const height = getCharacter(target.character).height;
+          this.reactions[defender] = { heavy: e.heavy, high: e.y - target.y > height * 0.6 };
+          this.lastDefender = defender;
+          if (e.heavy) this.cameraPunch = 1;
           this.effects.burst(
             e.x,
             e.y,
@@ -333,7 +361,12 @@ export class GameRenderer {
       // Passos acompanham a distância andada (sem o pé "patinar" no chão).
       const moved = model.root.position.x - x;
       this.walkPhase[index] += Math.abs(moved) * WALK_PHASE_PER_UNIT;
-      model.root.position.set(x, y, 0);
+      // Na pausa do impacto (hitstop) quem apanhou treme no lugar.
+      const shaking = match.hitstop > 0 && this.lastDefender === index;
+      const jitter = shaking
+        ? (Math.random() - 0.5) * 0.08 * shakeScale(this.accessibility.screenShake)
+        : 0;
+      model.root.position.set(x + jitter, y, 0);
       this.turnToward(model, f.facing === 1 ? -TURN_TO_CAMERA : Math.PI + TURN_TO_CAMERA, dt);
       const state = victim && f.state === 'toonality' ? { ...f, state: 'dizzy' as const } : f;
       const { pose, rate } = targetPose(
@@ -342,6 +375,7 @@ export class GameRenderer {
         this.time + index * 0.7,
         model.look.personality,
         this.walkPhase[index],
+        this.reactions[index],
       );
       model.applyPose(pose, rate, dt);
 
@@ -419,6 +453,17 @@ export class GameRenderer {
     const key = `${match.tick - f.stateTick}:${f.moveId}`;
     if (f.stateTick >= move.startup && this.fxKeys[i] !== key) {
       this.fxKeys[i] = key;
+      // Risco de movimento onde o soco/chute chega, no primeiro quadro ativo.
+      if (move.hitbox && SWOOSH_ANIMS.has(move.anim)) {
+        const hb = move.hitbox;
+        const pos = interpolatedPositions(match, null, 1)[i];
+        this.effects.swoosh(
+          pos.x + f.facing * (hb.x + hb.w * 0.6),
+          pos.y + hb.y + hb.h / 2,
+          f.facing,
+          move.damage >= 70,
+        );
+      }
       if (move.anim === 'burst') {
         this.effects.ringPulse(f.x, 1, glow, 3);
         this.effects.burst(f.x, 1, glow, 30, 0.14);
@@ -489,6 +534,13 @@ export class GameRenderer {
     const sx = (Math.random() - 0.5) * shake;
     const sy = (Math.random() - 0.5) * shake;
     this.camera.lookAt(cam.x + sx, 1.2 + height + sy, 0);
+    // Leve zoom no golpe forte, que volta rápido.
+    const fov = 40 - this.cameraPunch * 2.5 * shakeScale(this.accessibility.screenShake);
+    if (Math.abs(this.camera.fov - fov) > 0.01) {
+      this.camera.fov = fov;
+      this.camera.updateProjectionMatrix();
+    }
+    this.cameraPunch = Math.max(0, this.cameraPunch - dt * 6);
   }
 
   private addLights(): void {
