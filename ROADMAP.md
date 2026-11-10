@@ -27,6 +27,9 @@ O plano de jogo detalhado está em `PLANO.md`. Este arquivo acompanha o checklis
 
 ## Log
 
+- 2026-11-10 — Movimento liso (#31): lutadores, projéteis e câmera interpolados entre ticks, câmera pelo tempo real, passos pela distância e virada suave.
+- 2026-11-10 — Golpes com impacto (#32): preparação, estalo e pausa no impacto, giro de tronco e avanço do quadril, reações diferentes a golpe alto/corpo/forte, tremor no hitstop, zoom no golpe forte e risco de movimento.
+- 2026-11-10 — Dificuldade recalibrada para iniciantes com teste de vitórias por nível; Fácil por padrão, Arcade sobe só um degrau no fim e reduz o nível ao continuar, chefe com 1200 de vida e dano normal, comandos e buffer mais tolerantes.
 - 2026-11-10 — Tabela de frame data gerada para todo o roster e formas, com dano, chip, vantagens nominais e testes; dados de balanceamento preservados.
 - 2026-11-10 — Fase 1: licença MIT, regras de autonomia no AGENTS.md, roadmap.
 - 2026-11-10 — 6 novos testes de rollback (rajada de perda, fora de ordem/duplicados, latência assimétrica, checksum divergente, limite de predição).

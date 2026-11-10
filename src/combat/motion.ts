@@ -71,7 +71,7 @@ function wasHeld(prevMask: number, button: AttackButton): boolean {
 
 /** Janela em ticks para completar um comando, cresce com o tamanho do comando. */
 export function motionWindow(motion: readonly MotionStep[]): number {
-  return 10 + motion.length * 7;
+  return 14 + motion.length * 8;
 }
 
 /**

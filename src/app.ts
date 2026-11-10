@@ -284,7 +284,7 @@ export class App {
       action: () => this.show(this.selectScreen(mode, l.id)),
     }));
     const menu = new Menu('Dificuldade', items, this.sounds, () => this.show(this.mainMenu()));
-    menu.index = 1;
+    menu.index = 0;
     menu.render();
     const el = html('div', 'screen');
     el.appendChild(menu.el);
@@ -527,10 +527,11 @@ export class App {
     const cycle: StageId[] = ['rooftop', 'park', 'forest', 'sweets', 'base'];
     s.characters = [s.characters[0], opponent];
     s.stage = opponent === 'zhaar' ? 'ship' : cycle[ladder.index % cycle.length]!;
-    // A CPU fica mais esperta a cada luta do arcade.
+    // Só as duas últimas lutas sobem um degrau em relação ao nível da sessão.
     const order = CPU_LEVELS.map((l) => l.id);
     const base = order.indexOf(s.level);
-    const level = order[Math.min(order.length - 1, base + Math.floor(ladder.index / 2))]!;
+    const increase = ladder.index >= ladder.opponents.length - 2 ? 1 : 0;
+    const level = order[Math.min(order.length - 1, base + increase)]!;
     s.sources = [
       { kind: 'local', player: 'both' },
       { kind: 'cpu', brain: createCpu(level, Math.floor(Math.random() * 1e9)) },
@@ -871,7 +872,13 @@ export class App {
       'screen continue-screen',
       `<h2>CONTINUAR?</h2><div class="count">${count}</div><p>ENTER para continuar</p>`,
     );
-    const retry = () => this.show(this.versusScreen());
+    const retry = () => {
+      const s = this.session!;
+      const order = CPU_LEVELS.map((l) => l.id);
+      s.level = order[Math.max(0, order.indexOf(s.level) - 1)]!;
+      this.arcadeStage();
+      this.show(this.versusScreen());
+    };
     el.addEventListener('click', retry);
     return {
       el,

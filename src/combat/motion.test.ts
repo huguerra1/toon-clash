@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { type PlayerInput, emptyInput } from '../core/input';
-import { createHistory, matchMotion, recordInput, toDir } from './motion';
+import { createHistory, matchMotion, motionWindow, recordInput, toDir } from './motion';
 
 function input(...held: (keyof PlayerInput)[]): PlayerInput {
   const i = emptyInput();
@@ -59,7 +59,16 @@ describe('matchMotion', () => {
   });
 
   it('não aceita comandos feitos devagar demais', () => {
-    const { history, tick } = feed([input('down'), emptyInput(), input('right')], 20);
+    const { history, tick } = feed(
+      [input('down'), emptyInput(), input('right')],
+      motionWindow(['D', 'F']) + 1,
+    );
     expect(matchMotion(history, ['D', 'F'], tick)).toBe(false);
+  });
+
+  it('aceita o comando até o limite novo e rejeita no tick seguinte', () => {
+    const { history } = feed([input('down'), input('right')]);
+    expect(matchMotion(history, ['D', 'F'], 31)).toBe(true);
+    expect(matchMotion(history, ['D', 'F'], 32)).toBe(false);
   });
 });
