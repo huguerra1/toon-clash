@@ -12,7 +12,7 @@ O plano de jogo detalhado está em `PLANO.md`. Este arquivo acompanha o checklis
 - [ ] README com GIF/prints da luta, do menu e do online
 - [ ] Link do jogo no "About" do repositório, com descrição e tópicos (depende do `gh`)
 - [ ] Releases versionadas (tags `v0.x` com changelog)
-- [ ] Dependabot ativo (npm + GitHub Actions)
+- [x] Dependabot ativo (npm + GitHub Actions; PRs semanais na `dev`)
 - [ ] Backlog restante registrado como issues
 
 ## Backlog
