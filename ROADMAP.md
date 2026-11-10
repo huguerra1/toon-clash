@@ -21,7 +21,7 @@ O plano de jogo detalhado está em `PLANO.md`. Este arquivo acompanha o checklis
 2. Testes do netcode: reconexão (perda em rajada, fora de ordem, duplicados, latência assimétrica, checksum divergente e limite de predição: feito)
 3. Performance no celular: medir FPS num aparelho real (qualidade adaptativa automática de bloom, sombras e pixel ratio: feito)
 4. ~~Acessibilidade: remapeamento das teclas de luta e redução de tremor de tela e flashes~~ (feito; o tutorial mostra as teclas atuais)
-5. Release `v1.0` com changelog gerado a partir dos PRs
+5. ~~Release `v1.0` com changelog gerado a partir dos PRs~~ ✅ (CHANGELOG.md)
 6. ~~Telemetria local opcional (FPS e ping)~~ (feito: Opções → Mostrar desempenho, em qualquer modo; ping no Online)
 7. Balanceamento: tabela de frame data por personagem gerada a partir de `data.ts` (feito; `npm run frame-data`, documentação em `docs/FRAME-DATA.md`)
 
@@ -37,3 +37,5 @@ O plano de jogo detalhado está em `PLANO.md`. Este arquivo acompanha o checklis
 - 2026-11-10 — GIF de luta e prints (título, seleção, luta) no README, capturados com Chrome headless.
 - 2026-11-10 — Backlog restante virou issues (#14–#19). Status: pronto para revisão.
 - 2026-11-10 — Qualidade gráfica adaptativa ('auto' por padrão): desce para 'baixo' abaixo de 50 FPS por 3 s e sobe para 'alto' acima de 58 FPS por 10 s.
+- 2026-11-10 — Balanceamento (#16): Passo Sombrio invencível só até reaparecer (15 frames, antes 26); Quique Gelatinoso com recuperação 24 (-12 na defesa, antes -2); Mergulho da Águia com recuperação 16 (-4 na defesa, antes +2).
+- 2026-11-10 — Release v1.0.0: CHANGELOG.md, versão 1.0.0 no package.json, tag e release no GitHub.

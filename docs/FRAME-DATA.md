@@ -124,7 +124,7 @@ Multiplicador de dano: 0.95. Multiplicador de movimento da forma: 1.
 | Voadora Forte (j_hk)          | (no ar) Chute Alto        |       7 |     10 |        6 |    23 |   67 |    0 |      21 |        11 |       +15 |          +5 | médio                                         |
 | Arremesso (throw)             | → + Soco Baixo (de perto) |       4 |      3 |       24 |    31 |  105 |    0 |       — |         — |         — |           — | agarrão (indefensável)                        |
 | Orbe Sombrio (shadow_orb)     | ↓ → + Soco Baixo          |      16 |      1 |       22 |    39 |   57 |    9 |      24 |         — |         — |           — | especial; projétil (médio)                    |
-| Passo Sombrio (shadow_step)   | ↓ ← + Chute Baixo         |      14 |      1 |       12 |    27 |    0 |    0 |       — |         — |         — |           — | especial; teleporte; invencível por 26 frames |
+| Passo Sombrio (shadow_step)   | ↓ ← + Chute Baixo         |      14 |      1 |       12 |    27 |    0 |    0 |       — |         — |         — |           — | especial; teleporte; invencível por 15 frames |
 | Mão das Sombras (shadow_hand) | ← → + Soco Alto           |      14 |      4 |       26 |    44 |   90 |    0 |       — |         — |         — |           — | especial; agarrão (indefensável)              |
 
 ## Ferrum
@@ -194,7 +194,7 @@ Multiplicador de dano: 1. Multiplicador de movimento da forma: 1.
 | Voadora Forte (j_hk)                | (no ar) Chute Alto        |       7 |     10 |        6 |    23 |   70 |    0 |      21 |        11 |       +15 |          +5 | médio                                                        |
 | Arremesso (throw)                   | → + Soco Baixo (de perto) |       4 |      3 |       24 |    31 |  110 |    0 |       — |         — |         — |           — | agarrão (indefensável)                                       |
 | Carga do Rinoceronte (rhino_charge) | ← → + Soco Alto           |      10 |     16 |       20 |    46 |   95 |   14 |       — |         — |         — |           — | médio; especial; derruba; avanço                             |
-| Mergulho da Águia (eagle_dive)      | ↓ ← + Chute Baixo         |       8 |     30 |       10 |    48 |   80 |   12 |       — |        12 |         — |          +2 | overhead (defesa em pé); especial; derruba; salto ascendente |
+| Mergulho da Águia (eagle_dive)      | ↓ ← + Chute Baixo         |       8 |     30 |       16 |    54 |   80 |   12 |       — |        12 |         — |          -4 | overhead (defesa em pé); especial; derruba; salto ascendente |
 | Pancada do Gorila (gorilla_slam)    | ↓ ↓ + Soco Alto           |      18 |      5 |       24 |    47 |  100 |   15 |       — |        14 |         — |         -10 | baixo; especial; derruba                                     |
 
 ## Sir Pipoca
@@ -240,7 +240,7 @@ Multiplicador de dano: 0.95. Multiplicador de movimento da forma: 1.
 | Voadora Forte (j_hk)             | (no ar) Chute Alto        |       7 |     10 |        6 |    23 |   67 |    0 |      21 |        11 |       +15 |          +5 | médio                                                                |
 | Arremesso (throw)                | → + Soco Baixo (de perto) |       4 |      3 |       24 |    31 |  105 |    0 |       — |         — |         — |           — | agarrão (indefensável)                                               |
 | Soco Elástico (elastic_punch)    | ↓ → + Soco Baixo          |      12 |      5 |       22 |    39 |   67 |   10 |      20 |        12 |        -2 |         -10 | médio; especial                                                      |
-| Quique Gelatinoso (jelly_bounce) | ↓ ↓ + Chute Baixo         |       5 |     14 |       14 |    33 |   71 |   11 |       — |        12 |         — |          -2 | médio; especial; lançador; salto ascendente; invencível por 6 frames |
+| Quique Gelatinoso (jelly_bounce) | ↓ ↓ + Chute Baixo         |       5 |     14 |       24 |    43 |   71 |   11 |       — |        12 |         — |         -12 | médio; especial; lançador; salto ascendente; invencível por 6 frames |
 | Mola Esmagadora (spring_slam)    | ← → + Chute Alto          |       9 |     14 |       20 |    43 |   86 |   13 |       — |         — |         — |           — | médio; especial; derruba; avanço                                     |
 
 ## Capi Folgado

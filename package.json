@@ -1,7 +1,7 @@
 {
   "name": "toon-clash",
   "private": true,
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "Jogo de luta 2.5D no navegador com personagens originais inspirados nos desenhos dos anos 2000.",
   "type": "module",
   "scripts": {

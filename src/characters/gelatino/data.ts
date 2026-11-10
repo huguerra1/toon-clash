@@ -32,7 +32,8 @@ export const gelatino = defineCharacter({
       anim: 'rising',
       startup: 5,
       active: 14,
-      recovery: 14,
+      // Reversal invencível: precisa ser punível na defesa.
+      recovery: 24,
       damage: 75,
       blockstun: 12,
       hitbox: { x: -0.2, y: 0.4, w: 1.2, h: 1.4 },
