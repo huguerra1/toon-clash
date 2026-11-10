@@ -1,6 +1,6 @@
 # ROADMAP — Toon Clash
 
-**Status:** EM ANDAMENTO · Prioridade 1 no portfólio (carro-chefe)
+**Status:** PRONTO PARA REVISÃO · Prioridade 1 no portfólio (carro-chefe). Falta só a release, que depende do merge `dev → main`.
 
 O plano de jogo detalhado está em `PLANO.md`. Este arquivo acompanha o checklist de portfólio e o backlog de melhorias.
 
@@ -13,7 +13,7 @@ O plano de jogo detalhado está em `PLANO.md`. Este arquivo acompanha o checklis
 - [x] Link do jogo no "About" do repositório, com descrição e tópicos
 - [ ] Releases versionadas (tags `v0.x` com changelog)
 - [x] Dependabot ativo (npm + GitHub Actions; PRs semanais na `dev`)
-- [ ] Backlog restante registrado como issues
+- [x] Backlog restante registrado como issues (#14 a #19)
 
 ## Backlog
 
@@ -35,3 +35,4 @@ O plano de jogo detalhado está em `PLANO.md`. Este arquivo acompanha o checklis
 - 2026-11-10 — Contador de desempenho opcional (FPS, pior quadro, quadros lentos e ping no Online).
 - 2026-11-10 — Tutorial mostra as teclas remapeadas; tela de remapear usa os mesmos nomes de botão do jogo.
 - 2026-11-10 — GIF de luta e prints (título, seleção, luta) no README, capturados com Chrome headless.
+- 2026-11-10 — Backlog restante virou issues (#14–#19). Status: pronto para revisão.
