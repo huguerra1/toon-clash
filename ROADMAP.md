@@ -20,7 +20,7 @@ O plano de jogo detalhado está em `PLANO.md`. Este arquivo acompanha o checklis
 1. GIF de gameplay e prints no README
 2. Testes do netcode: rollback com perda/atraso de pacotes, checksum divergente e reconexão
 3. Performance no celular: medir FPS em aparelho médio, LOD/sombras adaptativas, limitar o bloom
-4. Acessibilidade: remapeamento de teclas e opção de reduzir tremor de tela/flashes
+4. Acessibilidade: remapeamento de teclas (reduzir tremor de tela e flashes: feito)
 5. Release `v1.0` com changelog gerado a partir dos PRs
 6. Telemetria local opcional (FPS e ping) no modo Treino
 7. Balanceamento: tabela de frame data por personagem gerada a partir de `data.ts`
@@ -28,3 +28,4 @@ O plano de jogo detalhado está em `PLANO.md`. Este arquivo acompanha o checklis
 ## Log
 
 - 2026-11-10 — Fase 1: licença MIT, regras de autonomia no AGENTS.md, roadmap.
+- 2026-11-10 — Opções de acessibilidade: tremor de tela (normal/reduzido/desligado, respeita prefers-reduced-motion) e flashes reduzidos.

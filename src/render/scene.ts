@@ -10,6 +10,13 @@ import { Effects } from './effects';
 import { getFighterSource } from './fighter-assets';
 import { PostProcessing } from './post';
 import { type Quality, loadQuality, saveQuality } from './quality';
+import {
+  type AccessibilityPrefs,
+  flashScale,
+  loadAccessibility,
+  saveAccessibility,
+  shakeScale,
+} from '../ui/accessibility';
 import type { Personality } from '../characters/look';
 import { type Expression, FighterModel, type PropName } from './fighter-model';
 import { targetPose } from './poses';
@@ -100,6 +107,8 @@ export class GameRenderer {
   /** Brilho pós-processado (bloom); desligado na qualidade 'baixo'. */
   private readonly post: PostProcessing;
   quality: Quality = loadQuality();
+  /** Tremor de tela e flashes escolhidos no menu Opções. */
+  accessibility: AccessibilityPrefs = loadAccessibility();
   private stage: BuiltStage | null = null;
   private models: [FighterModel[], FighterModel[]] = [[], []];
   private toonality: ToonalityPlayer | null = null;
@@ -169,6 +178,7 @@ export class GameRenderer {
   private createModels(id: CharacterId): FighterModel[] {
     return LOOKS[id].map((_, form) => {
       const model = new FighterModel(getLook(id, form), getFighterSource(id, form));
+      model.flashScale = flashScale(this.accessibility.flashes);
       this.scene.add(model.root);
       return model;
     });
@@ -307,6 +317,14 @@ export class GameRenderer {
     this.resize();
   }
 
+  /** Salva e aplica na hora as preferências de tremor e flashes (sem recarregar). */
+  setAccessibility(prefs: AccessibilityPrefs): void {
+    this.accessibility = { ...prefs };
+    saveAccessibility(this.accessibility);
+    const scale = flashScale(this.accessibility.flashes);
+    for (const m of this.models.flat()) m.flashScale = scale;
+  }
+
   private activeModel(match: MatchState, i: 0 | 1): FighterModel | undefined {
     const models = this.models[i];
     return models[match.fighters[i].form] ?? models[0];
@@ -384,7 +402,8 @@ export class GameRenderer {
     cam.x += (center - cam.x) * CAMERA_SMOOTHING;
     cam.z += (targetZ - cam.z) * CAMERA_SMOOTHING;
     cam.y += (2.1 + height - cam.y) * CAMERA_SMOOTHING;
-    const shake = this.effects.shake * this.effects.shake * 0.25;
+    const shake =
+      this.effects.shake * this.effects.shake * 0.25 * shakeScale(this.accessibility.screenShake);
     const sx = (Math.random() - 0.5) * shake;
     const sy = (Math.random() - 0.5) * shake;
     this.camera.lookAt(cam.x + sx, 1.2 + height + sy, 0);

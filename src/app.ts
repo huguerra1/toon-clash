@@ -26,6 +26,7 @@ import {
 import type { GameRenderer } from './render/scene';
 import { STAGES, type StageId } from './render/stages';
 import { Hud } from './ui/hud';
+import { FLASH_OPTIONS, SCREEN_SHAKE_OPTIONS, cycleOption } from './ui/accessibility';
 import { Menu, type MenuItem } from './ui/menu';
 import { fighterPortrait } from './render/portraits';
 import { BUTTON_NAMES, moveList } from './ui/notation';
@@ -922,6 +923,17 @@ export class App {
   }
 
   optionsScreen(): Screen {
+    const a11y = () => this.renderer.accessibility;
+    const setShake = (step: 1 | -1) =>
+      this.renderer.setAccessibility({
+        ...a11y(),
+        screenShake: cycleOption(SCREEN_SHAKE_OPTIONS, a11y().screenShake, step),
+      });
+    const setFlashes = (step: 1 | -1) =>
+      this.renderer.setAccessibility({
+        ...a11y(),
+        flashes: cycleOption(FLASH_OPTIONS, a11y().flashes, step),
+      });
     const items: MenuItem[] = [
       {
         label: () => `Volume: ${Math.round(this.audio.volume * 100)}%`,
@@ -936,6 +948,18 @@ export class App {
         label: () =>
           `Gráficos: ${this.renderer.quality === 'alto' ? 'alto (com brilho)' : 'baixo (mais leve)'}`,
         action: () => this.renderer.setQuality(this.renderer.quality === 'alto' ? 'baixo' : 'alto'),
+      },
+      {
+        label: () => `Tremor de tela: ${a11y().screenShake}`,
+        action: () => setShake(1),
+        left: () => setShake(-1),
+        right: () => setShake(1),
+      },
+      {
+        label: () => `Flashes: ${a11y().flashes}`,
+        action: () => setFlashes(1),
+        left: () => setFlashes(-1),
+        right: () => setFlashes(1),
       },
       {
         label: 'Tela cheia',
