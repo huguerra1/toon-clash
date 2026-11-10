@@ -1,68 +1,60 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { loadQuality, saveQuality } from './quality';
+import { defaultQualityLevel, loadQuality, saveQuality } from './quality';
 
 afterEach(() => vi.unstubAllGlobals());
 
 describe('preferência de qualidade gráfica', () => {
-  it('usa qualidade alta e permite salvar sem window', () => {
+  it('usa modo automático por padrão e permite salvar sem window', () => {
     vi.stubGlobal('window', undefined);
-    expect(loadQuality()).toBe('alto');
+    expect(loadQuality()).toBe('auto');
+    expect(defaultQualityLevel()).toBe('alto');
     expect(() => saveQuality('baixo')).not.toThrow();
   });
 
-  it.each([true, false])('detecta ponteiro impreciso: %s', (coarse) => {
-    const matchMedia = vi.fn(() => ({ matches: coarse }));
+  it('retorna automático quando nada foi salvo', () => {
     vi.stubGlobal('window', {
       localStorage: { getItem: () => null },
-      matchMedia,
     });
-    expect(loadQuality()).toBe(coarse ? 'baixo' : 'alto');
-    expect(matchMedia).toHaveBeenCalledWith('(pointer: coarse)');
+    expect(loadQuality()).toBe('auto');
   });
 
-  it.each(['alto', 'baixo'] as const)('respeita a preferência salva: %s', (quality) => {
+  it.each(['alto', 'baixo', 'auto'] as const)('respeita a preferência salva: %s', (quality) => {
     const getItem = vi.fn(() => quality);
-    const matchMedia = vi.fn(() => ({ matches: quality === 'alto' }));
+    const matchMedia = vi.fn(() => ({ matches: true }));
     vi.stubGlobal('window', { localStorage: { getItem }, matchMedia });
     expect(loadQuality()).toBe(quality);
     expect(getItem).toHaveBeenCalledWith('toon-clash:qualidade');
     expect(matchMedia).not.toHaveBeenCalled();
   });
 
-  it('ignora valores salvos inválidos', () => {
+  it('ignora valores salvos inválidos e volta ao automático', () => {
     vi.stubGlobal('window', {
       localStorage: { getItem: () => 'médio' },
       matchMedia: () => ({ matches: true }),
     });
-    expect(loadQuality()).toBe('baixo');
+    expect(loadQuality()).toBe('auto');
   });
 
-  it('detecta toque mesmo quando o acesso ao armazenamento é bloqueado', () => {
-    vi.stubGlobal('window', {
-      get localStorage() {
-        throw new Error('Acesso bloqueado');
-      },
-      matchMedia: () => ({ matches: true }),
-    });
-    expect(loadQuality()).toBe('baixo');
-    expect(() => saveQuality('baixo')).not.toThrow();
+  it.each([true, false])('detecta ponteiro impreciso no nível inicial: %s', (coarse) => {
+    const matchMedia = vi.fn(() => ({ matches: coarse }));
+    vi.stubGlobal('window', { matchMedia });
+    expect(defaultQualityLevel()).toBe(coarse ? 'baixo' : 'alto');
+    expect(matchMedia).toHaveBeenCalledWith('(pointer: coarse)');
   });
 
-  it('usa qualidade alta sem armazenamento nem matchMedia', () => {
+  it('usa qualidade alta sem matchMedia ou quando matchMedia lança exceção', () => {
     vi.stubGlobal('window', {});
-    expect(loadQuality()).toBe('alto');
-  });
+    expect(defaultQualityLevel()).toBe('alto');
 
-  it('usa qualidade alta quando matchMedia lança uma exceção', () => {
     vi.stubGlobal('window', {
       matchMedia: () => {
         throw new Error('Consulta indisponível');
       },
     });
-    expect(loadQuality()).toBe('alto');
+    expect(defaultQualityLevel()).toBe('alto');
   });
 
-  it.each(['alto', 'baixo'] as const)('salva a preferência: %s', (quality) => {
+  it.each(['alto', 'baixo', 'auto'] as const)('salva a preferência: %s', (quality) => {
     const setItem = vi.fn();
     vi.stubGlobal('window', { localStorage: { setItem } });
     saveQuality(quality);
@@ -80,7 +72,7 @@ describe('preferência de qualidade gráfica', () => {
         },
       },
     });
-    expect(loadQuality()).toBe('alto');
+    expect(loadQuality()).toBe('auto');
     expect(() => saveQuality('alto')).not.toThrow();
   });
 });
