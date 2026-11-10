@@ -383,13 +383,15 @@ export function targetPose(
   def: CharacterDef,
   time: number,
   personality?: Personality,
+  /** Fase dos passos pela distância andada; sem ela, usa o relógio. */
+  walkPhase?: number,
 ): { pose: Pose; rate: number } {
   switch (f.state) {
     case 'idle':
       return { pose: guard(time, personality), rate: 0.25 };
     case 'walk': {
       const forward = Math.sign(f.vx) === f.facing ? 1 : -1;
-      const phase = time * 10 * forward;
+      const phase = (walkPhase ?? time * 10) * forward;
       const s = Math.sin(phase);
       return {
         pose: pose(guard(time, personality), {

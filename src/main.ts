@@ -33,9 +33,9 @@ let last = performance.now();
 startLoop(
   {
     update: () => app.update(),
-    render: () => {
+    render: (alpha) => {
       const now = performance.now();
-      app.render(Math.min((now - last) / 1000, 0.1), now);
+      app.render(Math.min((now - last) / 1000, 0.1), now, alpha);
       last = now;
     },
   },
