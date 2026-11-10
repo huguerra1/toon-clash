@@ -29,6 +29,7 @@ import { STAGES, type StageId } from './render/stages';
 import { Hud } from './ui/hud';
 import { FLASH_OPTIONS, SCREEN_SHAKE_OPTIONS, cycleOption } from './ui/accessibility';
 import { Menu, type MenuItem } from './ui/menu';
+import { PerfMeter } from './ui/perf-meter';
 import { fighterPortrait } from './render/portraits';
 import { BUTTON_NAMES, moveList } from './ui/notation';
 import { RemapView } from './ui/remap-view';
@@ -53,6 +54,8 @@ export interface OnlineHooks {
   tick(): void;
   /** Opções da tela de resultado (revanche, sair). */
   resultItems(): MenuItem[];
+  /** Ping atual até o servidor em ms (0 enquanto não foi medido). */
+  ping(): number;
 }
 
 export interface Screen {
@@ -110,6 +113,8 @@ export class App {
   match: MatchState;
   session: Session | null = null;
   readonly hud = new Hud();
+  /** Contador de desempenho opcional; fica fora do #ui para aparecer por cima das telas. */
+  readonly perf = new PerfMeter(document.body);
   private screen: Screen | null = null;
   /** Algo aberto por cima da luta (pausa, lista de golpes) que recebe os comandos de menu. */
   private paused: { handle(e: MenuEvent): unknown } | null = null;
@@ -179,8 +184,11 @@ export class App {
     this.screen?.tick?.();
   }
 
-  render(dt: number): void {
+  /** Desenha um quadro. `now` é o horário do quadro em ms (para o contador de desempenho). */
+  render(dt: number, now: number): void {
     this.renderer.render(this.match, dt);
+    const ping = this.session?.mode === 'online' ? this.online?.ping() : undefined;
+    this.perf.frame(now, ping);
   }
 
   // -------------------------------------------------------------------------
@@ -978,6 +986,12 @@ export class App {
         action: () => setFlashes(1),
         left: () => setFlashes(-1),
         right: () => setFlashes(1),
+      },
+      {
+        label: () => `Mostrar desempenho: ${this.perf.shown ? 'sim' : 'não'}`,
+        action: () => this.perf.setVisible(!this.perf.shown),
+        left: () => this.perf.setVisible(!this.perf.shown),
+        right: () => this.perf.setVisible(!this.perf.shown),
       },
       {
         label: 'Tela cheia',

@@ -260,7 +260,7 @@ class OnlineMatch implements OnlineHooks {
     for (const { frame, value } of session.takeChecksums()) {
       this.client.sendPeer({ type: 'checksum', game: this.game, frame, value });
     }
-    const ping = Math.round(this.client.ping);
+    const ping = this.ping();
     const route = this.client.direct ? ' · direto' : '';
     this.badge.textContent =
       this.stalled > STALL_WARNING
@@ -292,6 +292,10 @@ class OnlineMatch implements OnlineHooks {
         },
       },
     ];
+  }
+
+  ping(): number {
+    return Math.round(this.client.ping);
   }
 
   dispose(): void {

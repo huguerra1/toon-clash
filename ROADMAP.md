@@ -22,7 +22,7 @@ O plano de jogo detalhado está em `PLANO.md`. Este arquivo acompanha o checklis
 3. Performance no celular: medir FPS em aparelho médio, LOD/sombras adaptativas, limitar o bloom
 4. Acessibilidade: remapeamento das teclas de luta e redução de tremor de tela e flashes (feito; falta o tutorial mostrar as teclas atuais)
 5. Release `v1.0` com changelog gerado a partir dos PRs
-6. Telemetria local opcional (FPS e ping) no modo Treino
+6. ~~Telemetria local opcional (FPS e ping)~~ (feito: Opções → Mostrar desempenho, em qualquer modo; ping no Online)
 7. Balanceamento: tabela de frame data por personagem gerada a partir de `data.ts` (feito; `npm run frame-data`, documentação em `docs/FRAME-DATA.md`)
 
 ## Log
@@ -32,3 +32,4 @@ O plano de jogo detalhado está em `PLANO.md`. Este arquivo acompanha o checklis
 - 2026-11-10 — 6 novos testes de rollback (rajada de perda, fora de ordem/duplicados, latência assimétrica, checksum divergente, limite de predição).
 - 2026-11-10 — Opções de acessibilidade: tremor de tela (normal/reduzido/desligado, respeita prefers-reduced-motion) e flashes reduzidos.
 - 2026-11-10 — Remapeamento das teclas de luta por jogador (Controles → Remapear teclas), salvo no navegador.
+- 2026-11-10 — Contador de desempenho opcional (FPS, pior quadro, quadros lentos e ping no Online).
