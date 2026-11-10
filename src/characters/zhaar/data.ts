@@ -7,11 +7,11 @@ export const zhaar = defineCharacter({
   bio: 'Senhor da guerra intergaláctico que quer o bracelete cósmico — e a Terra de brinde.',
   pronoun: 'ele',
   boss: true,
-  maxHealth: 1400,
+  maxHealth: 1200,
   walkSpeed: 0.045,
   jumpVelocity: 0.22,
   height: 2.3,
-  damageMul: 1.2,
+  damageMul: 1.0,
   moves: {
     conquest_ray: {
       name: 'Raio Conquistador',

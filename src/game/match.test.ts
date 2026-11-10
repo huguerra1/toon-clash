@@ -115,6 +115,19 @@ describe('rounds', () => {
 });
 
 describe('combate', () => {
+  it.each([
+    [8, true],
+    [9, false],
+  ])('botão antecipado em %i ticks: executa = %s', (early, executes) => {
+    let m = fight();
+    m.fighters[0].state = 'hitstun';
+    m.fighters[0].stun = early;
+    m = step(m, input('hp'));
+    m = step(m, idle, idle, early);
+    expect(m.fighters[0].state === 'attack').toBe(executes);
+    expect(m.fighters[0].moveId).toBe(executes ? 'hp' : null);
+  });
+
   it('o jab acerta de perto e causa hitstun', () => {
     let m = fight();
     m = step(m, input('lp'), idle, 8);
