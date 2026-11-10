@@ -9,7 +9,13 @@ import type { MatchState } from '../game/match';
 import { Effects } from './effects';
 import { getFighterSource } from './fighter-assets';
 import { PostProcessing } from './post';
-import { type Quality, loadQuality, saveQuality } from './quality';
+import {
+  type Quality,
+  type QualityLevel,
+  defaultQualityLevel,
+  loadQuality,
+  saveQuality,
+} from './quality';
 import {
   type AccessibilityPrefs,
   flashScale,
@@ -106,7 +112,10 @@ export class GameRenderer {
   private readonly effects = new Effects();
   /** Brilho pós-processado (bloom); desligado na qualidade 'baixo'. */
   private readonly post: PostProcessing;
+  /** Preferência de qualidade escolhida pelo jogador ('alto', 'baixo' ou 'auto'). */
   quality: Quality = loadQuality();
+  /** Nível gráfico efetivo atualmente aplicado ('alto' ou 'baixo'). */
+  effectiveQuality: QualityLevel = defaultQualityLevel();
   /** Tremor de tela e flashes escolhidos no menu Opções. */
   accessibility: AccessibilityPrefs = loadAccessibility();
   private stage: BuiltStage | null = null;
@@ -130,7 +139,7 @@ export class GameRenderer {
     this.scene.add(this.effects.group);
     this.addLights();
     this.post = new PostProcessing(this.renderer, this.scene, this.camera);
-    this.setQuality(this.quality);
+    this.setQuality(this.quality === 'auto' ? this.effectiveQuality : this.quality);
 
     this.resize();
     window.addEventListener('resize', () => this.resize());
@@ -306,15 +315,20 @@ export class GameRenderer {
     this.post.render();
   }
 
-  /** Alto: brilho e sombras suaves; baixo: mais leve para celular. */
-  setQuality(quality: Quality): void {
+  /** Aplica o nível efetivo ('alto': brilho e sombras suaves; 'baixo': mais leve para celular). */
+  setQuality(level: QualityLevel): void {
+    this.effectiveQuality = level;
+    this.post.enabled = level === 'alto';
+    this.renderer.shadowMap.type = level === 'alto' ? THREE.PCFSoftShadowMap : THREE.BasicShadowMap;
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, level === 'alto' ? 2 : 1.25));
+    this.resize();
+  }
+
+  /** Salva a preferência do jogador ('alto', 'baixo' ou 'auto') e aplica o nível efetivo. */
+  setQualityPreference(quality: Quality, effective: QualityLevel = defaultQualityLevel()): void {
     this.quality = quality;
     saveQuality(quality);
-    this.post.enabled = quality === 'alto';
-    this.renderer.shadowMap.type =
-      quality === 'alto' ? THREE.PCFSoftShadowMap : THREE.BasicShadowMap;
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, quality === 'alto' ? 2 : 1.25));
-    this.resize();
+    this.setQuality(quality === 'auto' ? effective : quality);
   }
 
   /** Salva e aplica na hora as preferências de tremor e flashes (sem recarregar). */

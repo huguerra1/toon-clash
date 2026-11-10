@@ -24,6 +24,8 @@ import {
   tutorialDummyInput,
   updateTutorial,
 } from './game/tutorial';
+import { AdaptiveQuality } from './render/adaptive-quality';
+import { QUALITY_LABELS, QUALITY_OPTIONS, defaultQualityLevel } from './render/quality';
 import type { GameRenderer } from './render/scene';
 import { STAGES, type StageId } from './render/stages';
 import { Hud } from './ui/hud';
@@ -115,6 +117,8 @@ export class App {
   readonly hud = new Hud();
   /** Contador de desempenho opcional; fica fora do #ui para aparecer por cima das telas. */
   readonly perf = new PerfMeter(document.body);
+  /** Ajuste dinâmico de qualidade gráfica quando a preferência é 'auto'. */
+  readonly adaptiveQuality: AdaptiveQuality;
   private screen: Screen | null = null;
   /** Algo aberto por cima da luta (pausa, lista de golpes) que recebe os comandos de menu. */
   private paused: { handle(e: MenuEvent): unknown } | null = null;
@@ -132,6 +136,7 @@ export class App {
     readonly controls: Controls,
     readonly audio: AudioSystem,
   ) {
+    this.adaptiveQuality = new AdaptiveQuality(renderer.effectiveQuality);
     root.appendChild(this.hud.el);
     root.appendChild(html('div', 'signature', `Criado por <b>${AUTHOR}</b>`));
     this.match = this.showcase(['kai', 'solara'], 'rooftop');
@@ -186,6 +191,12 @@ export class App {
 
   /** Desenha um quadro. `now` é o horário do quadro em ms (para o contador de desempenho). */
   render(dt: number, now: number): void {
+    if (this.renderer.quality === 'auto') {
+      const level = this.adaptiveQuality.frame(now);
+      if (level !== this.renderer.effectiveQuality) {
+        this.renderer.setQuality(level);
+      }
+    }
     this.renderer.render(this.match, dt);
     const ping = this.session?.mode === 'online' ? this.online?.ping() : undefined;
     this.perf.frame(now, ping);
@@ -950,6 +961,12 @@ export class App {
 
   optionsScreen(): Screen {
     const a11y = () => this.renderer.accessibility;
+    const setQuality = (step: 1 | -1) => {
+      const next = cycleOption(QUALITY_OPTIONS, this.renderer.quality, step);
+      const initial = defaultQualityLevel();
+      this.adaptiveQuality.reset(initial);
+      this.renderer.setQualityPreference(next, initial);
+    };
     const setShake = (step: 1 | -1) =>
       this.renderer.setAccessibility({
         ...a11y(),
@@ -971,9 +988,10 @@ export class App {
         action: () => (this.audio.muted = !this.audio.muted),
       },
       {
-        label: () =>
-          `Gráficos: ${this.renderer.quality === 'alto' ? 'alto (com brilho)' : 'baixo (mais leve)'}`,
-        action: () => this.renderer.setQuality(this.renderer.quality === 'alto' ? 'baixo' : 'alto'),
+        label: () => `Gráficos: ${QUALITY_LABELS[this.renderer.quality]}`,
+        action: () => setQuality(1),
+        left: () => setQuality(-1),
+        right: () => setQuality(1),
       },
       {
         label: () => `Tremor de tela: ${a11y().screenShake}`,

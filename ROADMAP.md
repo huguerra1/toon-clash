@@ -19,7 +19,7 @@ O plano de jogo detalhado está em `PLANO.md`. Este arquivo acompanha o checklis
 
 1. ~~GIF de gameplay e prints no README~~ (feito; falta um print do modo Online)
 2. Testes do netcode: reconexão (perda em rajada, fora de ordem, duplicados, latência assimétrica, checksum divergente e limite de predição: feito)
-3. Performance no celular: medir FPS em aparelho médio, LOD/sombras adaptativas, limitar o bloom
+3. Performance no celular: medir FPS num aparelho real (qualidade adaptativa automática de bloom, sombras e pixel ratio: feito)
 4. ~~Acessibilidade: remapeamento das teclas de luta e redução de tremor de tela e flashes~~ (feito; o tutorial mostra as teclas atuais)
 5. Release `v1.0` com changelog gerado a partir dos PRs
 6. ~~Telemetria local opcional (FPS e ping)~~ (feito: Opções → Mostrar desempenho, em qualquer modo; ping no Online)
@@ -36,3 +36,4 @@ O plano de jogo detalhado está em `PLANO.md`. Este arquivo acompanha o checklis
 - 2026-11-10 — Tutorial mostra as teclas remapeadas; tela de remapear usa os mesmos nomes de botão do jogo.
 - 2026-11-10 — GIF de luta e prints (título, seleção, luta) no README, capturados com Chrome headless.
 - 2026-11-10 — Backlog restante virou issues (#14–#19). Status: pronto para revisão.
+- 2026-11-10 — Qualidade gráfica adaptativa ('auto' por padrão): desce para 'baixo' abaixo de 50 FPS por 3 s e sobe para 'alto' acima de 58 FPS por 10 s.
