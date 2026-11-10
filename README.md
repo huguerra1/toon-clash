@@ -8,6 +8,12 @@ Jogo de luta 1x1 estilo Mortal Kombat, em 2.5D, rodando direto no navegador com
 
 **Jogue:** https://huguerra1.github.io/toon-clash/
 
+![Luta entre Kai Volt e Nyx-R, com combo e especial](docs/img/luta.gif)
+
+| Tela inicial                                       | Escolha de lutadores                                      | Luta contra a CPU                                |
+| -------------------------------------------------- | --------------------------------------------------------- | ------------------------------------------------ |
+| ![Tela inicial do Toon Clash](docs/img/titulo.png) | ![Tela de escolha dos 11 lutadores](docs/img/selecao.png) | ![Luta com combo de 2 golpes](docs/img/luta.png) |
+
 ## O que tem
 
 - **11 lutadores** com golpes especiais próprios: Kai Volt (troca de forma), Nyx-R (armas de
