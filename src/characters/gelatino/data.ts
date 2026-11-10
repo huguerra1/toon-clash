@@ -7,7 +7,7 @@ export const gelatino = defineCharacter({
   bio: 'Uma gelatina de uva que ganhou vida numa festa mágica. Estica os braços até o outro lado da arena.',
   pronoun: 'ele',
   maxHealth: 1050,
-  walkSpeed: 0.05,
+  walkSpeed: 0.07,
   jumpVelocity: 0.28,
   height: 1.7,
   damageMul: 0.95,

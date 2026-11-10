@@ -7,7 +7,7 @@ export const kai = defineCharacter({
   bio: 'Achou um bracelete cósmico dentro de um meteorito e agora troca de forma no meio da briga.',
   pronoun: 'ele',
   maxHealth: 1000,
-  walkSpeed: 0.055,
+  walkSpeed: 0.077,
   jumpVelocity: 0.25,
   height: 1.7,
   damageMul: 1,

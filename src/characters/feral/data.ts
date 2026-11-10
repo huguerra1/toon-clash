@@ -7,7 +7,7 @@ export const feral = defineCharacter({
   bio: 'Escoteiro que comeu uma fruta encantada na trilha e agora vira qualquer bicho — de preferência um bem grande.',
   pronoun: 'ele',
   maxHealth: 1000,
-  walkSpeed: 0.058,
+  walkSpeed: 0.081,
   jumpVelocity: 0.26,
   height: 1.65,
   damageMul: 1,

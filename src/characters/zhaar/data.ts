@@ -8,7 +8,7 @@ export const zhaar = defineCharacter({
   pronoun: 'ele',
   boss: true,
   maxHealth: 1200,
-  walkSpeed: 0.045,
+  walkSpeed: 0.063,
   jumpVelocity: 0.22,
   height: 2.3,
   damageMul: 1.0,
