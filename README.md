@@ -1,5 +1,8 @@
 # Toon Clash
 
+[![CI](https://github.com/huguerra1/toon-clash/actions/workflows/ci.yml/badge.svg)](https://github.com/huguerra1/toon-clash/actions/workflows/ci.yml)
+[![Licença: MIT](https://img.shields.io/badge/licen%C3%A7a-MIT-yellow.svg)](LICENSE)
+
 Jogo de luta 1x1 estilo Mortal Kombat, em 2.5D, rodando direto no navegador com
 [Three.js](https://threejs.org/). Personagens originais inspirados nos desenhos animados dos anos 2000.
 
@@ -19,7 +22,10 @@ Jogo de luta 1x1 estilo Mortal Kombat, em 2.5D, rodando direto no navegador com
 - **CPU** com 4 níveis: Fácil, Médio, Difícil e Pesadelo.
 - **Treino** com boneco configurável (parado, defende, agachado, pulando ou CPU).
 - **Online** com salas por código e netcode com rollback — veja [docs/ONLINE.md](docs/ONLINE.md).
-- **Controles**: teclado (2 jogadores), controle (Gamepad API) e toque no celular.
+- **Controles**: teclado (2 jogadores, teclas de luta remapeáveis), controle (Gamepad API) e toque
+  no celular.
+- **Acessibilidade**: opções para reduzir ou desligar o tremor de tela e reduzir os flashes (respeita
+  o "reduzir movimento" do sistema).
 - **Áudio** 100% sintetizado (efeitos, músicas e locutor em português).
 - **VR**: modo espectador em óculos com WebXR.
 - **Visual**: rosto expressivo, squash & stretch, partes que balançam, brilho (bloom) e 6 cenários
@@ -47,18 +53,21 @@ Abra http://localhost:5173. Para o online local, rode também `npm run server`.
 | Defender                | Espaço    | J ou Num 0 | LB / RB / gatilhos |
 | Pausa                   | ESC       | ESC        | Start              |
 
-A lista de golpes de cada lutador fica no menu de pausa.
+A lista de golpes de cada lutador fica no menu de pausa. As teclas de luta podem ser trocadas em
+**Controles → Remapear teclas**. A tabela completa de frame data (startup, ativos, recuperação e
+vantagens) está em [docs/FRAME-DATA.md](docs/FRAME-DATA.md).
 
 ## Scripts
 
-| Comando          | O que faz                                          |
-| ---------------- | -------------------------------------------------- |
-| `npm run dev`    | Servidor de desenvolvimento com recarga automática |
-| `npm run server` | Servidor de salas do modo online (porta 8787)      |
-| `npm test`       | Testes (Vitest)                                    |
-| `npm run lint`   | Verifica o código com ESLint                       |
-| `npm run format` | Formata o código com Prettier                      |
-| `npm run build`  | Gera a versão de produção em `dist/`               |
+| Comando              | O que faz                                                  |
+| -------------------- | ---------------------------------------------------------- |
+| `npm run dev`        | Servidor de desenvolvimento com recarga automática         |
+| `npm run server`     | Servidor de salas do modo online (porta 8787)              |
+| `npm test`           | Testes (Vitest)                                            |
+| `npm run lint`       | Verifica o código com ESLint                               |
+| `npm run format`     | Formata o código com Prettier                              |
+| `npm run build`      | Gera a versão de produção em `dist/`                       |
+| `npm run frame-data` | Gera `docs/FRAME-DATA.md` a partir dos dados dos lutadores |
 
 ## Estrutura
 
