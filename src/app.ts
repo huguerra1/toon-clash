@@ -609,7 +609,7 @@ export class App {
       level: 'medio',
     };
     this.beginFight();
-    this.tutorialView.update(this.tutorial);
+    this.tutorialView.update(this.tutorial, this.controls.keymap);
   }
 
   private tutorialDoneScreen(): Screen {
@@ -664,7 +664,7 @@ export class App {
         else this.advance([this.inputFor(0, s.sources[0]), this.inputFor(1, s.sources[1])]);
         if (s.mode === 'tutorial') {
           const finished = updateTutorial(this.tutorial, this.match, this.match.events);
-          this.tutorialView.update(this.tutorial);
+          this.tutorialView.update(this.tutorial, this.controls.keymap);
           if (finished) this.show(this.tutorialDoneScreen());
           return;
         }

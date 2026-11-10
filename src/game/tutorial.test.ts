@@ -64,10 +64,11 @@ describe('tutorial', () => {
     expect(s.t.progress).toBe(3);
   });
 
-  it('todas as lições têm objetivo positivo e texto', () => {
+  it('todas as lições têm objetivo positivo, texto e marcadores de botão nas teclas', () => {
     for (const l of LESSONS) {
       expect(l.goal).toBeGreaterThan(0);
       expect(l.text.length).toBeGreaterThan(10);
+      expect(l.keys).toMatch(/\{(up|down|left|right|lp|hp|lk|hk|block)\}/);
     }
   });
 });

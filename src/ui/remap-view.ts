@@ -10,6 +10,7 @@ import {
   saveKeymap,
 } from '../core/keymap';
 import type { MenuSounds } from './menu';
+import { BUTTON_NAMES } from './notation';
 
 /** Nomes dos botões na tela de remapear. */
 export const REMAP_LABELS: Record<Button, string> = {
@@ -17,10 +18,7 @@ export const REMAP_LABELS: Record<Button, string> = {
   down: 'Baixo',
   left: 'Esquerda',
   right: 'Direita',
-  lp: 'Soco fraco',
-  hp: 'Soco forte',
-  lk: 'Chute fraco',
-  hk: 'Chute forte',
+  ...BUTTON_NAMES,
   block: 'Defesa',
 };
 
