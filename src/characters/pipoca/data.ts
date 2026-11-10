@@ -7,7 +7,7 @@ export const pipoca = defineCharacter({
   bio: 'Escudeiro mirim com elmo de panela e uma baguete encantada que corta mais que espada.',
   pronoun: 'ele',
   maxHealth: 1000,
-  walkSpeed: 0.056,
+  walkSpeed: 0.078,
   jumpVelocity: 0.26,
   height: 1.6,
   damageMul: 1,

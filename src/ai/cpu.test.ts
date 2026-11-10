@@ -74,7 +74,8 @@ describe('CPU', () => {
     expect(wins[2]! / samples).toBeLessThan(0.5);
     expect(wins[3]! / samples).toBeLessThanOrEqual(0.1);
     for (let i = 1; i < wins.length; i++) expect(wins[i - 1]!).toBeGreaterThan(wins[i]!);
-  }, 60_000);
+    // 96 partidas completas: com a suíte inteira rodando em paralelo pode passar de 1 minuto.
+  }, 180_000);
 
   it('duas CPUs terminam uma partida com vencedor', () => {
     const { m, hits, specials } = cpuMatch(['kai', 'ferrum'], ['dificil', 'medio']);

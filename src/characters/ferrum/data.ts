@@ -7,7 +7,7 @@ export const ferrum = defineCharacter({
   bio: 'Piloto mirim que vive dentro de uma armadura de construção turbinada. Lento, pesado e com um canhão de plasma no braço.',
   pronoun: 'ele',
   maxHealth: 1100,
-  walkSpeed: 0.042,
+  walkSpeed: 0.059,
   jumpVelocity: 0.22,
   height: 2.0,
   damageMul: 1.15,

@@ -7,7 +7,7 @@ export const umbra = defineCharacter({
   bio: 'Aprendiz de ilusionista que roubou o manto de um mágico. Controla sombras e some no meio da luta.',
   pronoun: 'ela',
   maxHealth: 950,
-  walkSpeed: 0.05,
+  walkSpeed: 0.07,
   jumpVelocity: 0.26,
   height: 1.7,
   damageMul: 0.95,

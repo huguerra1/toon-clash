@@ -18,7 +18,7 @@ export const solara = defineCharacter({
   bio: 'Guardiã de um farol estelar em órbita. Desceu à Terra de férias e solta estrelas pelas mãos.',
   pronoun: 'ela',
   maxHealth: 950,
-  walkSpeed: 0.06,
+  walkSpeed: 0.084,
   jumpVelocity: 0.27,
   height: 1.75,
   damageMul: 0.95,

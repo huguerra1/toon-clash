@@ -7,7 +7,7 @@ export const capi = defineCharacter({
   bio: 'Capivara que trabalha no parque e foge do serviço. Quando briga, usa o ancinho e fitas de videogame.',
   pronoun: 'ele',
   maxHealth: 1050,
-  walkSpeed: 0.048,
+  walkSpeed: 0.067,
   jumpVelocity: 0.23,
   height: 1.6,
   damageMul: 1.05,

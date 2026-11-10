@@ -8,8 +8,8 @@ export const MIN_DISTANCE = 0.8;
 export const THROW_RANGE = 1.15;
 
 export const GRAVITY = 0.011;
-export const JUMP_VX = 0.075;
-export const BACK_WALK_FACTOR = 0.8;
+export const JUMP_VX = 0.085;
+export const BACK_WALK_FACTOR = 0.85;
 export const HITSTUN_FRICTION = 0.82;
 
 export const LAND_TICKS = 4;
