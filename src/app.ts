@@ -113,6 +113,8 @@ function hex(color: number): string {
 /** Fluxo do jogo: telas, partida, arcade e treino. */
 export class App {
   match: MatchState;
+  /** Estado do tick anterior, para o renderer interpolar o movimento entre os dois. */
+  private previous: MatchState | null = null;
   session: Session | null = null;
   readonly hud = new Hud();
   /** Contador de desempenho opcional; fica fora do #ui para aparecer por cima das telas. */
@@ -189,15 +191,18 @@ export class App {
     this.screen?.tick?.();
   }
 
-  /** Desenha um quadro. `now` é o horário do quadro em ms (para o contador de desempenho). */
-  render(dt: number, now: number): void {
+  /**
+   * Desenha um quadro. `now` é o horário do quadro em ms (para o contador de desempenho) e
+   * `alpha` a fração do tempo entre o último tick e o próximo (para interpolar o movimento).
+   */
+  render(dt: number, now: number, alpha = 1): void {
     if (this.renderer.quality === 'auto') {
       const level = this.adaptiveQuality.frame(now);
       if (level !== this.renderer.effectiveQuality) {
         this.renderer.setQuality(level);
       }
     }
-    this.renderer.render(this.match, dt);
+    this.renderer.render(this.match, dt, this.previous, alpha);
     const ping = this.session?.mode === 'online' ? this.online?.ping() : undefined;
     this.perf.frame(now, ping);
   }
@@ -699,6 +704,7 @@ export class App {
   /** Mostra um novo estado da partida (local ou vindo do rollback online). */
   present(match: MatchState, events: readonly GameEvent[] = match.events): void {
     const before = this.match.phase;
+    this.previous = this.match;
     this.match = match;
     this.renderer.handleEvents(events, this.match);
     this.hud.handleEvents(events, this.match);

@@ -57,6 +57,50 @@ const VISUAL_PROPS: Record<string, PropName> = {
 };
 const ALL_PROPS = [...new Set(Object.values(VISUAL_PROPS))];
 
+interface Point {
+  x: number;
+  y: number;
+}
+
+/** Passo da caminhada por unidade andada (≈ 3 radianos por metro). */
+const WALK_PHASE_PER_UNIT = 3;
+/** Acima disso entre dois ticks é teletransporte/arremesso: não interpola. */
+const MAX_INTERPOLATED_JUMP = 1.5;
+
+/** O estado anterior só serve para interpolar se for exatamente o tick antes deste. */
+function canInterpolate(match: MatchState, previous: MatchState | null): previous is MatchState {
+  return previous !== null && previous.tick === match.tick - 1 && previous.round === match.round;
+}
+
+function lerp(a: number, b: number, t: number): number {
+  return a + (b - a) * t;
+}
+
+/** Posição de cada lutador entre o tick anterior e o atual. */
+export function interpolatedPositions(
+  match: MatchState,
+  previous: MatchState | null,
+  alpha: number,
+): [Point, Point] {
+  const t = Math.min(1, Math.max(0, alpha));
+  return match.fighters.map((f, i) => {
+    const p = canInterpolate(match, previous) ? previous.fighters[i]! : null;
+    if (!p || Math.abs(f.x - p.x) > MAX_INTERPOLATED_JUMP) return { x: f.x, y: f.y };
+    return { x: lerp(p.x, f.x, t), y: lerp(p.y, f.y, t) };
+  }) as [Point, Point];
+}
+
+/** Projéteis com a posição interpolada (pelo id, entre o tick anterior e o atual). */
+function interpolatedProjectiles(match: MatchState, previous: MatchState | null, alpha: number) {
+  if (!canInterpolate(match, previous)) return match.projectiles;
+  const before = new Map(previous.projectiles.map((p) => [p.id, p.x]));
+  const t = Math.min(1, Math.max(0, alpha));
+  return match.projectiles.map((p) => {
+    const x = before.get(p.id);
+    return x === undefined ? p : { ...p, x: lerp(x, p.x, t) };
+  });
+}
+
 /** Cara do lutador conforme o que ele está fazendo. */
 function expressionFor(f: FighterState, special: boolean, personality?: Personality): Expression {
   switch (f.state) {
@@ -123,6 +167,8 @@ export class GameRenderer {
   private toonality: ToonalityPlayer | null = null;
   private readonly fxKeys: [string, string] = ['', ''];
   private time = 0;
+  /** Fase do ciclo de passos de cada lutador (avança com a distância andada). */
+  private readonly walkPhase: [number, number] = [0, 0];
   private loadedStage: StageId | null = null;
   private loadedCharacters = '';
 
@@ -264,9 +310,15 @@ export class GameRenderer {
     }
   }
 
-  render(match: MatchState, dt: number): void {
+  /**
+   * Desenha um quadro. A lógica roda a 60 Hz e a tela pode ser mais rápida (120/144 Hz): com o
+   * estado anterior e `alpha` (0..1, fração entre os dois ticks) as posições são interpoladas,
+   * para o movimento ficar liso em qualquer monitor.
+   */
+  render(match: MatchState, dt: number, previous: MatchState | null = null, alpha = 1): void {
     this.time += dt;
     const presenting = this.renderer.xr.isPresenting;
+    const positions = interpolatedPositions(match, previous, alpha);
 
     match.fighters.forEach((f, i) => {
       const index = i as 0 | 1;
@@ -277,14 +329,19 @@ export class GameRenderer {
       if (!model) return;
 
       const victim = match.toonality !== null && match.toonality.player !== index;
-      model.root.position.set(f.x, f.y, 0);
-      model.root.rotation.set(0, f.facing === 1 ? -TURN_TO_CAMERA : Math.PI + TURN_TO_CAMERA, 0);
+      const { x, y } = positions[index];
+      // Passos acompanham a distância andada (sem o pé "patinar" no chão).
+      const moved = model.root.position.x - x;
+      this.walkPhase[index] += Math.abs(moved) * WALK_PHASE_PER_UNIT;
+      model.root.position.set(x, y, 0);
+      this.turnToward(model, f.facing === 1 ? -TURN_TO_CAMERA : Math.PI + TURN_TO_CAMERA, dt);
       const state = victim && f.state === 'toonality' ? { ...f, state: 'dizzy' as const } : f;
       const { pose, rate } = targetPose(
         state,
         def,
         this.time + index * 0.7,
         model.look.personality,
+        this.walkPhase[index],
       );
       model.applyPose(pose, rate, dt);
 
@@ -306,13 +363,22 @@ export class GameRenderer {
 
     this.updateToonality(match);
     this.effects.syncProjectiles(
-      match.projectiles,
+      interpolatedProjectiles(match, previous, alpha),
       (owner) => getLook(match.fighters[owner].character, match.fighters[owner].form).glow,
     );
     this.effects.update(dt);
     this.stage?.update(this.time);
-    if (!presenting) this.followFighters(match);
+    if (!presenting) this.followFighters(positions, dt);
     this.post.render();
+  }
+
+  /** Gira o lutador até o lado certo em ~0,1 s (antes virava 180° de uma vez). */
+  private turnToward(model: FighterModel, target: number, dt: number): void {
+    const current = model.root.rotation.y;
+    // Menor caminho entre os dois ângulos.
+    const diff = Math.atan2(Math.sin(target - current), Math.cos(target - current));
+    const k = 1 - Math.exp(-dt * 30);
+    model.root.rotation.set(0, Math.abs(diff) < 0.001 ? target : current + diff * k, 0);
   }
 
   /** Aplica o nível efetivo ('alto': brilho e sombras suaves; 'baixo': mais leve para celular). */
@@ -403,8 +469,8 @@ export class GameRenderer {
    * A câmera acompanha o centro da luta e se afasta quando os lutadores se separam,
    * para os dois caberem na tela em qualquer proporção de janela.
    */
-  private followFighters(match: MatchState): void {
-    const [a, b] = match.fighters;
+  private followFighters(positions: readonly [Point, Point], dt: number): void {
+    const [a, b] = positions;
     const center = (a.x + b.x) / 2;
     const halfSpan = Math.abs(b.x - a.x) / 2 + CAMERA_MARGIN;
     const tanHalfFovX =
@@ -412,10 +478,12 @@ export class GameRenderer {
     const targetZ = Math.max(CAMERA_MIN_DISTANCE, halfSpan / tanHalfFovX);
     const height = Math.min(Math.max(a.y, b.y), 4) * 0.35;
 
+    // Suavização pelo tempo real: a câmera anda igual em monitor de 60, 120 ou 144 Hz.
+    const k = 1 - Math.pow(1 - CAMERA_SMOOTHING, dt * 60);
     const cam = this.camera.position;
-    cam.x += (center - cam.x) * CAMERA_SMOOTHING;
-    cam.z += (targetZ - cam.z) * CAMERA_SMOOTHING;
-    cam.y += (2.1 + height - cam.y) * CAMERA_SMOOTHING;
+    cam.x += (center - cam.x) * k;
+    cam.z += (targetZ - cam.z) * k;
+    cam.y += (2.1 + height - cam.y) * k;
     const shake =
       this.effects.shake * this.effects.shake * 0.25 * shakeScale(this.accessibility.screenShake);
     const sx = (Math.random() - 0.5) * shake;
