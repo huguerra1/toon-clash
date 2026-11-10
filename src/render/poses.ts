@@ -253,43 +253,70 @@ function lying(): Pose {
 }
 
 /** Pose de preparação (W) e de golpe (S) para cada tipo de animação de ataque. */
+// twist > 0 leva o ombro A (lado da câmera) para a frente; < 0 leva o ombro B.
+// lunge é o passo do quadril para a frente (negativo = recua o corpo, como nos chutes).
 const STRIKES: Record<AnimKind, { w: PosePatch; s: PosePatch; base?: 'crouch' | 'air' }> = {
-  jab: { w: { armA: 0.9, foreA: 2.2 }, s: { armA: 1.55, foreA: 0.1, spine: 0.18 } },
+  jab: {
+    w: { armA: 0.75, foreA: 2.3, twist: -0.15 },
+    s: { armA: 1.6, foreA: 0.05, spine: 0.2, twist: 0.35, lunge: 0.07, head: 0.05 },
+  },
   cross: {
-    w: { armB: 0.3, foreB: 2.3, spine: -0.1 },
-    s: { armB: 1.6, foreB: 0.05, spine: 0.28, legB: -0.45 },
+    w: { armB: 0.2, foreB: 2.4, spine: -0.12, twist: 0.3, lunge: -0.04 },
+    s: { armB: 1.62, foreB: 0, spine: 0.32, legB: -0.55, twist: -0.75, lunge: 0.16, head: 0.1 },
   },
   frontKick: {
-    w: { legA: 1.2, shinA: -1.8 },
-    s: { legA: 1.5, shinA: -0.05, spine: -0.2, armA: 0.3 },
+    w: { legA: 1.35, shinA: -2.0, spine: -0.05, lunge: -0.03 },
+    s: { legA: 1.55, shinA: 0, spine: -0.25, armA: 0.3, lunge: -0.06 },
   },
   roundhouse: {
-    w: { legB: 0.8, shinB: -1.6, spine: -0.2 },
-    s: { legB: 1.95, shinB: -0.1, spine: -0.45, armB: -0.4, hipsY: 0.02 },
+    w: { legB: 0.9, shinB: -1.8, spine: -0.2, twist: 0.45 },
+    s: {
+      legB: 1.95,
+      shinB: -0.05,
+      spine: -0.5,
+      armB: -0.5,
+      hipsY: 0.03,
+      twist: -0.85,
+      lunge: -0.04,
+    },
   },
-  crouchJab: { base: 'crouch', w: { armA: 0.8, foreA: 2.2 }, s: { armA: 1.5, foreA: 0.1 } },
+  crouchJab: {
+    base: 'crouch',
+    w: { armA: 0.75, foreA: 2.3, twist: -0.1 },
+    s: { armA: 1.55, foreA: 0.05, twist: 0.3, lunge: 0.05 },
+  },
   uppercut: {
     base: 'crouch',
-    w: { armB: 0.2, foreB: 2.4 },
+    w: { armB: 0.1, foreB: 2.5, twist: 0.35, hipsY: -0.45 },
     s: {
-      hipsY: -0.02,
-      spine: -0.1,
-      head: -0.2,
-      armB: 2.9,
-      foreB: 0.3,
+      hipsY: 0.04,
+      spine: -0.15,
+      head: -0.3,
+      armB: 3.0,
+      foreB: 0.25,
       legA: 0.3,
       shinA: -0.2,
       legB: -0.2,
       shinB: -0.1,
+      twist: -0.6,
+      lunge: 0.08,
     },
   },
-  lowKick: { base: 'crouch', w: { legA: 0.9 }, s: { legA: 1.55, shinA: -0.1, hipsY: -0.42 } },
+  lowKick: {
+    base: 'crouch',
+    w: { legA: 0.8, shinA: -2.1 },
+    s: { legA: 1.6, shinA: -0.05, hipsY: -0.44, lunge: 0.05 },
+  },
   sweep: {
     base: 'crouch',
-    w: { legB: 0.4 },
-    s: { legB: 1.6, shinB: 0, spine: 0.55, hipsY: -0.5 },
+    w: { legB: 0.3, twist: 0.3 },
+    s: { legB: 1.65, shinB: 0, spine: 0.6, hipsY: -0.52, twist: -0.9 },
   },
-  airPunch: { base: 'air', w: { armA: 0.6, foreA: 2.0 }, s: { armA: 1.1, foreA: 0.1 } },
+  airPunch: {
+    base: 'air',
+    w: { armA: 0.5, foreA: 2.2, twist: -0.15 },
+    s: { armA: 1.15, foreA: 0.05, twist: 0.35 },
+  },
   airKick: {
     base: 'air',
     w: { legA: 1.4, shinA: -1.8 },
@@ -317,8 +344,8 @@ const STRIKES: Record<AnimKind, { w: PosePatch; s: PosePatch; base?: 'crouch' | 
     },
   },
   slash: {
-    w: { armA: 2.7, foreA: 0.4, spine: -0.25 },
-    s: { armA: 1.0, foreA: 0, spine: 0.35, legA: 0.6 },
+    w: { armA: 2.8, foreA: 0.4, spine: -0.3, twist: -0.4 },
+    s: { armA: 0.9, foreA: 0, spine: 0.4, legA: 0.6, twist: 0.6, lunge: 0.14 },
   },
   slam: {
     w: { armA: 3.0, armB: 3.0, foreA: 0.2, foreB: 0.2, spine: -0.35 },
@@ -367,14 +394,85 @@ function attackPose(
         : guard(time, personality);
   const windup = pose(base, strike.w);
   const hit = pose(base, strike.s);
-  const t = f.stateTick;
-  if (t < move.startup) {
-    const k = move.startup === 0 ? 1 : t / move.startup;
-    return k < 0.6 ? mixPose(base, windup, k / 0.6) : mixPose(windup, hit, (k - 0.6) / 0.4);
+  return strikeTimeline(base, windup, hit, f.stateTick, move.startup, move.active, move.recovery);
+}
+
+/** Último golpe que o lutador levou: forte ou fraco, na cabeça ou no corpo. */
+export interface HitReaction {
+  heavy: boolean;
+  high: boolean;
+}
+
+/**
+ * Reação de quem apanha: golpe alto joga a cabeça para trás, golpe no corpo faz o lutador se
+ * curvar; golpe forte reage mais. Começa no máximo e se recupera até o fim do atordoamento.
+ */
+function hitReaction(
+  f: FighterState,
+  time: number,
+  personality: Personality | undefined,
+  reaction: HitReaction = { heavy: false, high: true },
+): Pose {
+  const base = f.crouching ? crouch() : guard(time, personality);
+  const total = f.stateTick + Math.max(1, f.stun);
+  const r = (1 - easeOut(Math.min(1, f.stateTick / total))) * (reaction.heavy ? 1.35 : 1);
+  if (reaction.high && !f.crouching) {
+    return pose(base, {
+      spine: base.spine - 0.5 * r,
+      head: base.head - 0.7 * r,
+      armA: base.armA - 0.9 * r,
+      foreA: base.foreA - 1.2 * r,
+      armB: base.armB - 0.3 * r,
+      foreB: base.foreB - 1.3 * r,
+      twist: 0.25 * r,
+      lunge: -0.12 * r,
+    });
   }
-  if (t < move.startup + move.active) return hit;
-  const k = (t - move.startup - move.active) / Math.max(1, move.recovery);
-  return mixPose(hit, base, Math.min(1, k));
+  return pose(base, {
+    spine: base.spine + 0.45 * r,
+    head: base.head + 0.35 * r,
+    hipsY: base.hipsY - 0.08 * r,
+    armA: 0.6,
+    foreA: 2.3,
+    armB: 0.5,
+    foreB: 2.4,
+    twist: -0.2 * r,
+    lunge: -0.1 * r,
+  });
+}
+
+const easeInOut = (t: number) => t * t * (3 - 2 * t);
+const easeOut = (t: number) => 1 - (1 - t) * (1 - t);
+/** Passa um pouco do ponto e volta (o "estalo" do golpe de desenho animado). */
+const easeOutBack = (t: number) => {
+  const s = 1.9;
+  const u = t - 1;
+  return 1 + u * u * ((s + 1) * u + s);
+};
+
+/**
+ * Ritmo do golpe, em ticks: preparação suave → estalo rápido que passa do ponto → segura no
+ * impacto → volta. Exportado para teste.
+ */
+export function strikeTimeline(
+  base: Pose,
+  windup: Pose,
+  hit: Pose,
+  t: number,
+  startup: number,
+  active: number,
+  recovery: number,
+): Pose {
+  if (t < startup) {
+    // A preparação usa ~60% do startup; o golpe "estala" nos ticks finais.
+    const k = startup === 0 ? 1 : t / startup;
+    if (k < 0.6) return mixPose(base, windup, easeInOut(k / 0.6));
+    return mixPose(windup, hit, easeOutBack((k - 0.6) / 0.4));
+  }
+  if (t < startup + active) return hit;
+  // Segura a pose um instante (follow-through) e só então volta.
+  const k = Math.min(1, (t - startup - active) / Math.max(1, recovery));
+  return k < 0.25 ? hit : mixPose(hit, base, easeOut((k - 0.25) / 0.75));
 }
 
 /** Pose alvo do lutador neste quadro e a velocidade com que o modelo deve chegar nela. */
@@ -385,6 +483,8 @@ export function targetPose(
   personality?: Personality,
   /** Fase dos passos pela distância andada; sem ela, usa o relógio. */
   walkPhase?: number,
+  /** Como foi o último golpe recebido (muda a reação de quem apanha). */
+  reaction?: HitReaction,
 ): { pose: Pose; rate: number } {
   switch (f.state) {
     case 'idle':
@@ -427,21 +527,10 @@ export function targetPose(
     case 'land':
       return { pose: pose(guard(time, personality), { hipsY: -0.18, spine: 0.2 }), rate: 0.5 };
     case 'attack':
-      return { pose: attackPose(f, def, time, personality), rate: 0.6 };
-    case 'hitstun': {
-      const base = f.crouching ? crouch() : guard(time, personality);
-      return {
-        pose: pose(base, {
-          spine: -0.45,
-          head: -0.35,
-          armA: -0.3,
-          foreA: 0.5,
-          armB: 0.2,
-          foreB: 0.6,
-        }),
-        rate: 0.6,
-      };
-    }
+      // Resposta rápida: o golpe precisa "estalar" na tela, não chegar devagar.
+      return { pose: attackPose(f, def, time, personality), rate: 0.9 };
+    case 'hitstun':
+      return { pose: hitReaction(f, time, personality, reaction), rate: 0.85 };
     case 'launched':
       return {
         pose: pose(neutralPose(), {

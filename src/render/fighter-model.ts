@@ -24,8 +24,16 @@ export type Joint = (typeof JOINTS)[number];
  * para a frente. hipsRot positivo = tomba de costas. hipsY desloca o quadril (agachar).
  * spread abre os braços para os lados.
  */
-export type Pose = Record<Joint, number> & { hipsY: number; hipsRot: number; spread: number };
-const POSE_KEYS = [...JOINTS, 'hipsY', 'hipsRot', 'spread'] as const;
+export type Pose = Record<Joint, number> & {
+  hipsY: number;
+  hipsRot: number;
+  spread: number;
+  /** Giro do tronco (positivo leva o ombro do lado A para a frente). */
+  twist: number;
+  /** Avanço do quadril para a frente, em unidades do mundo. */
+  lunge: number;
+};
+const POSE_KEYS = [...JOINTS, 'hipsY', 'hipsRot', 'spread', 'twist', 'lunge'] as const;
 
 export type PropName =
   | 'sword'
@@ -204,8 +212,10 @@ export class FighterModel {
     for (const key of POSE_KEYS) this.pose[key] += (target[key] - this.pose[key]) * k;
     const p = this.pose;
     this.hips.position.y = this.hipHeight + p.hipsY;
+    this.hips.position.x = p.lunge;
     this.hips.rotation.z = p.hipsRot;
     this.joints.spine.rotation.z = -p.spine;
+    this.joints.spine.rotation.y = p.twist;
     this.joints.head.rotation.z = -p.head;
     for (const joint of [
       'armA',
@@ -1058,6 +1068,8 @@ export function neutralPose(): Pose {
     hipsY: 0,
     hipsRot: 0,
     spread: 0,
+    twist: 0,
+    lunge: 0,
   };
 }
 
