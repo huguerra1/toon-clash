@@ -23,10 +23,11 @@ O plano de jogo detalhado está em `PLANO.md`. Este arquivo acompanha o checklis
 4. Acessibilidade: remapeamento de teclas (reduzir tremor de tela e flashes: feito)
 5. Release `v1.0` com changelog gerado a partir dos PRs
 6. Telemetria local opcional (FPS e ping) no modo Treino
-7. Balanceamento: tabela de frame data por personagem gerada a partir de `data.ts`
+7. Balanceamento: tabela de frame data por personagem gerada a partir de `data.ts` (feito; `npm run frame-data`, documentação em `docs/FRAME-DATA.md`)
 
 ## Log
 
+- 2026-11-10 — Tabela de frame data gerada para todo o roster e formas, com dano, chip, vantagens nominais e testes; dados de balanceamento preservados.
 - 2026-11-10 — Fase 1: licença MIT, regras de autonomia no AGENTS.md, roadmap.
 - 2026-11-10 — 6 novos testes de rollback (rajada de perda, fora de ordem/duplicados, latência assimétrica, checksum divergente, limite de predição).
 - 2026-11-10 — Opções de acessibilidade: tremor de tela (normal/reduzido/desligado, respeita prefers-reduced-motion) e flashes reduzidos.

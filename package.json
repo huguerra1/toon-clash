@@ -13,6 +13,7 @@
     "format:check": "prettier --check .",
     "test": "vitest run",
     "test:watch": "vitest",
+    "frame-data": "node --experimental-strip-types scripts/frame-data.ts",
     "server": "node server/server.mjs"
   },
   "dependencies": {
