@@ -13,7 +13,8 @@ import { getLook } from './characters/looks';
 import { STARTING_ROSTER, getCharacter } from './characters/roster';
 import type { CharacterId } from './combat/types';
 import type { Controls, MenuEvent } from './core/controls';
-import { type PlayerInput, emptyInput, mergeInputs } from './core/input';
+import { type Button, type PlayerInput, emptyInput, mergeInputs } from './core/input';
+import { keysLabel } from './core/keymap';
 import type { GameEvent } from './game/events';
 import { type MatchState, createMatch, defaultConfig, stepMatch } from './game/match';
 import {
@@ -23,12 +24,17 @@ import {
   tutorialDummyInput,
   updateTutorial,
 } from './game/tutorial';
+import { AdaptiveQuality } from './render/adaptive-quality';
+import { QUALITY_LABELS, QUALITY_OPTIONS, defaultQualityLevel } from './render/quality';
 import type { GameRenderer } from './render/scene';
 import { STAGES, type StageId } from './render/stages';
 import { Hud } from './ui/hud';
+import { FLASH_OPTIONS, SCREEN_SHAKE_OPTIONS, cycleOption } from './ui/accessibility';
 import { Menu, type MenuItem } from './ui/menu';
+import { PerfMeter } from './ui/perf-meter';
 import { fighterPortrait } from './render/portraits';
 import { BUTTON_NAMES, moveList } from './ui/notation';
+import { RemapView } from './ui/remap-view';
 import { TutorialView } from './ui/tutorial-view';
 
 export type Mode = 'arcade' | 'versus' | 'cpu' | 'training' | 'tutorial' | 'online';
@@ -50,6 +56,8 @@ export interface OnlineHooks {
   tick(): void;
   /** Opções da tela de resultado (revanche, sair). */
   resultItems(): MenuItem[];
+  /** Ping atual até o servidor em ms (0 enquanto não foi medido). */
+  ping(): number;
 }
 
 export interface Screen {
@@ -107,6 +115,10 @@ export class App {
   match: MatchState;
   session: Session | null = null;
   readonly hud = new Hud();
+  /** Contador de desempenho opcional; fica fora do #ui para aparecer por cima das telas. */
+  readonly perf = new PerfMeter(document.body);
+  /** Ajuste dinâmico de qualidade gráfica quando a preferência é 'auto'. */
+  readonly adaptiveQuality: AdaptiveQuality;
   private screen: Screen | null = null;
   /** Algo aberto por cima da luta (pausa, lista de golpes) que recebe os comandos de menu. */
   private paused: { handle(e: MenuEvent): unknown } | null = null;
@@ -124,6 +136,7 @@ export class App {
     readonly controls: Controls,
     readonly audio: AudioSystem,
   ) {
+    this.adaptiveQuality = new AdaptiveQuality(renderer.effectiveQuality);
     root.appendChild(this.hud.el);
     root.appendChild(html('div', 'signature', `Criado por <b>${AUTHOR}</b>`));
     this.match = this.showcase(['kai', 'solara'], 'rooftop');
@@ -176,8 +189,17 @@ export class App {
     this.screen?.tick?.();
   }
 
-  render(dt: number): void {
+  /** Desenha um quadro. `now` é o horário do quadro em ms (para o contador de desempenho). */
+  render(dt: number, now: number): void {
+    if (this.renderer.quality === 'auto') {
+      const level = this.adaptiveQuality.frame(now);
+      if (level !== this.renderer.effectiveQuality) {
+        this.renderer.setQuality(level);
+      }
+    }
     this.renderer.render(this.match, dt);
+    const ping = this.session?.mode === 'online' ? this.online?.ping() : undefined;
+    this.perf.frame(now, ping);
   }
 
   // -------------------------------------------------------------------------
@@ -598,7 +620,7 @@ export class App {
       level: 'medio',
     };
     this.beginFight();
-    this.tutorialView.update(this.tutorial);
+    this.tutorialView.update(this.tutorial, this.controls.keymap);
   }
 
   private tutorialDoneScreen(): Screen {
@@ -653,7 +675,7 @@ export class App {
         else this.advance([this.inputFor(0, s.sources[0]), this.inputFor(1, s.sources[1])]);
         if (s.mode === 'tutorial') {
           const finished = updateTutorial(this.tutorial, this.match, this.match.events);
-          this.tutorialView.update(this.tutorial);
+          this.tutorialView.update(this.tutorial, this.controls.keymap);
           if (finished) this.show(this.tutorialDoneScreen());
           return;
         }
@@ -887,41 +909,74 @@ export class App {
   }
 
   controlsScreen(): Screen {
-    const row = (name: string, p1: string, p2: string, pad: string) =>
-      `<tr><td>${name}</td><td>${p1}</td><td>${p2}</td><td>${pad}</td></tr>`;
-    const el = html(
+    const keymap = this.controls.keymap;
+    const row = (name: string, p1: string, p2: string, pad = '') =>
+      `<tr><td>${name}</td><td>${p1}</td><td>${p2}</td>${pad}</tr>`;
+    const padCell = (text: string, rows = 1) => `<td rowspan="${rows}">${text}</td>`;
+    const keys = (name: string, button: Button, pad = '') =>
+      row(name, keysLabel(keymap, 0, button), keysLabel(keymap, 1, button), pad);
+    const table = html(
       'div',
-      'screen',
-      `<div class="panel controls">
-        <h2>Controles</h2>
-        <table>
-          <tr><th></th><th>Jogador 1</th><th>Jogador 2</th><th>Controle</th></tr>
-          ${row('Mover / pular / agachar', 'W A S D', 'Setas', 'Direcional ou analógico')}
-          ${row(BUTTON_NAMES.lp, 'F', 'K ou Num 4', 'X / □')}
-          ${row(BUTTON_NAMES.hp, 'G', 'L ou Num 5', 'Y / △')}
-          ${row(BUTTON_NAMES.lk, 'V', ', ou Num 1', 'A / ✕')}
-          ${row(BUTTON_NAMES.hk, 'B', '. ou Num 2', 'B / ○')}
-          ${row('Defender', 'Espaço', 'J ou Num 0', 'LB / RB / gatilhos')}
-          ${row('Pausa', 'ESC', 'ESC', 'Start')}
-        </table>
-        <p>Golpes especiais são sequências de direções + botão (ex.: ↓ → + Soco Baixo). Veja a lista de golpes no menu de pausa.</p>
-        <p class="help">No celular, use os botões na tela. ESC ou ENTER volta.</p>
-      </div>`,
+      'controls-table',
+      `<table>
+        <tr><th></th><th>Jogador 1</th><th>Jogador 2</th><th>Controle</th></tr>
+        ${keys('Pular (cima)', 'up', padCell('Direcional ou analógico', 4))}
+        ${keys('Agachar (baixo)', 'down')}
+        ${keys('Esquerda', 'left')}
+        ${keys('Direita', 'right')}
+        ${keys(BUTTON_NAMES.lp, 'lp', padCell('X / □'))}
+        ${keys(BUTTON_NAMES.hp, 'hp', padCell('Y / △'))}
+        ${keys(BUTTON_NAMES.lk, 'lk', padCell('A / ✕'))}
+        ${keys(BUTTON_NAMES.hk, 'hk', padCell('B / ○'))}
+        ${keys('Defender', 'block', padCell('LB / RB / gatilhos'))}
+        ${row('Pausa', 'ESC', 'ESC', padCell('Start'))}
+      </table>
+      <p>Golpes especiais são sequências de direções + botão (ex.: ↓ → + Soco Baixo). Veja a lista de golpes no menu de pausa.</p>
+      <p class="help">No celular, use os botões na tela. Os menus sempre usam WASD/setas, ENTER e ESC.</p>`,
     );
-    const back = () => {
-      this.sounds.back();
-      this.show(this.mainMenu());
-    };
-    el.addEventListener('click', back);
-    return {
-      el,
-      handle: (e) => {
-        if (e.action === 'back' || e.action === 'pause' || e.action === 'confirm') back();
+    const back = () => this.show(this.mainMenu());
+    const items: MenuItem[] = [
+      {
+        label: 'Remapear teclas',
+        hint: 'Escolha as teclas de luta de cada jogador',
+        action: () => this.show(this.remapScreen()),
       },
-    };
+      { label: 'Voltar', action: back },
+    ];
+    const menu = new Menu('Controles', items, this.sounds, back);
+    menu.el.classList.add('controls');
+    menu.el.querySelector('ul')!.before(table);
+    const el = html('div', 'screen');
+    el.appendChild(menu.el);
+    return { el, handle: (e) => menu.handle(e) };
+  }
+
+  /** Troca as teclas de luta do teclado; as escolhas ficam salvas no navegador. */
+  remapScreen(): Screen {
+    const view = new RemapView(this.controls, this.sounds, () => this.show(this.controlsScreen()));
+    const el = html('div', 'screen');
+    el.appendChild(view.el);
+    return { el, handle: (e) => view.handle(e) };
   }
 
   optionsScreen(): Screen {
+    const a11y = () => this.renderer.accessibility;
+    const setQuality = (step: 1 | -1) => {
+      const next = cycleOption(QUALITY_OPTIONS, this.renderer.quality, step);
+      const initial = defaultQualityLevel();
+      this.adaptiveQuality.reset(initial);
+      this.renderer.setQualityPreference(next, initial);
+    };
+    const setShake = (step: 1 | -1) =>
+      this.renderer.setAccessibility({
+        ...a11y(),
+        screenShake: cycleOption(SCREEN_SHAKE_OPTIONS, a11y().screenShake, step),
+      });
+    const setFlashes = (step: 1 | -1) =>
+      this.renderer.setAccessibility({
+        ...a11y(),
+        flashes: cycleOption(FLASH_OPTIONS, a11y().flashes, step),
+      });
     const items: MenuItem[] = [
       {
         label: () => `Volume: ${Math.round(this.audio.volume * 100)}%`,
@@ -933,9 +988,28 @@ export class App {
         action: () => (this.audio.muted = !this.audio.muted),
       },
       {
-        label: () =>
-          `Gráficos: ${this.renderer.quality === 'alto' ? 'alto (com brilho)' : 'baixo (mais leve)'}`,
-        action: () => this.renderer.setQuality(this.renderer.quality === 'alto' ? 'baixo' : 'alto'),
+        label: () => `Gráficos: ${QUALITY_LABELS[this.renderer.quality]}`,
+        action: () => setQuality(1),
+        left: () => setQuality(-1),
+        right: () => setQuality(1),
+      },
+      {
+        label: () => `Tremor de tela: ${a11y().screenShake}`,
+        action: () => setShake(1),
+        left: () => setShake(-1),
+        right: () => setShake(1),
+      },
+      {
+        label: () => `Flashes: ${a11y().flashes}`,
+        action: () => setFlashes(1),
+        left: () => setFlashes(-1),
+        right: () => setFlashes(1),
+      },
+      {
+        label: () => `Mostrar desempenho: ${this.perf.shown ? 'sim' : 'não'}`,
+        action: () => this.perf.setVisible(!this.perf.shown),
+        left: () => this.perf.setVisible(!this.perf.shown),
+        right: () => this.perf.setVisible(!this.perf.shown),
       },
       {
         label: 'Tela cheia',

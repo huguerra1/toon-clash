@@ -95,6 +95,8 @@ export class FighterModel {
   private readonly props = new Map<PropName, THREE.Object3D[]>();
   private readonly hands: THREE.Object3D[] = [];
   private flash = 0;
+  /** Multiplicador do clarão branco (acessibilidade: flashes reduzidos). */
+  flashScale = 1;
   /** Altura do quadril, depende do tamanho das pernas de cada lutador. */
   hipHeight: number;
   private readonly thigh: number;
@@ -228,12 +230,13 @@ export class FighterModel {
 
   update(dt: number): void {
     if (this.flash > 0) this.flash = Math.max(0, this.flash - dt * 6);
+    const glow = this.flash * 0.8 * this.flashScale;
     for (const m of this.materials) {
       const base = this.baseEmissive.get(m)!;
       m.emissive.setRGB(
-        base.r + (1 - base.r) * this.flash * 0.8,
-        base.g + (1 - base.g) * this.flash * 0.8,
-        base.b + (1 - base.b) * this.flash * 0.8,
+        base.r + (1 - base.r) * glow,
+        base.g + (1 - base.g) * glow,
+        base.b + (1 - base.b) * glow,
       );
     }
     const stars = this.props.get('stars')?.[0];

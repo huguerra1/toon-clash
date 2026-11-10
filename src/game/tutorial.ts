@@ -9,7 +9,7 @@ export interface Lesson {
   title: string;
   /** Explicação curta mostrada na tela. */
   text: string;
-  /** Teclas do jogador 1 e botões do controle. */
+  /** Teclas do jogador 1 (marcadores `{lp}`, `{up}` etc.) e botões do controle. */
   keys: string;
   goal: number;
   dummy: TutorialDummy;
@@ -28,7 +28,7 @@ export const LESSONS: Lesson[] = [
   {
     title: 'Andar',
     text: 'Ande para a frente e para trás.',
-    keys: 'A / D · direcional ← →',
+    keys: '{left} / {right} · direcional ← →',
     goal: 60,
     dummy: 'parado',
     progress: (m) => (m.fighters[0].state === 'walk' ? 1 : 0),
@@ -36,7 +36,7 @@ export const LESSONS: Lesson[] = [
   {
     title: 'Pular',
     text: 'Pule 3 vezes. Segurando para a frente ou para trás você pula na diagonal.',
-    keys: 'W · direcional ↑',
+    keys: '{up} · direcional ↑',
     goal: 3,
     dummy: 'parado',
     progress: (_, events) => count(events, (e) => e.type === 'jump' && e.player === 0),
@@ -44,7 +44,7 @@ export const LESSONS: Lesson[] = [
   {
     title: 'Agachar',
     text: 'Agache 3 vezes. Agachado você escapa de golpes altos.',
-    keys: 'S · direcional ↓',
+    keys: '{down} · direcional ↓',
     goal: 3,
     dummy: 'parado',
     progress: (m) => (m.fighters[0].state === 'crouch' && m.fighters[0].stateTick === 1 ? 1 : 0),
@@ -52,7 +52,7 @@ export const LESSONS: Lesson[] = [
   {
     title: 'Socos',
     text: 'Chegue perto e acerte 3 socos no boneco.',
-    keys: 'F = Soco Baixo · G = Soco Alto · X / Y',
+    keys: '{lp} = Soco Baixo · {hp} = Soco Alto · X / Y',
     goal: 3,
     dummy: 'parado',
     progress: (m, events) =>
@@ -64,7 +64,7 @@ export const LESSONS: Lesson[] = [
   {
     title: 'Chutes',
     text: 'Agora acerte 3 chutes. O Chute Alto derruba!',
-    keys: 'V = Chute Baixo · B = Chute Alto · A / B',
+    keys: '{lk} = Chute Baixo · {hk} = Chute Alto · A / B',
     goal: 3,
     dummy: 'parado',
     progress: (m, events) =>
@@ -76,7 +76,7 @@ export const LESSONS: Lesson[] = [
   {
     title: 'Defender',
     text: 'O boneco vai atacar. Segure DEFENDER para bloquear 3 golpes.',
-    keys: 'Espaço · LB / RB',
+    keys: '{block} · LB / RB',
     goal: 3,
     dummy: 'jab',
     progress: (_, events) => count(events, (e) => e.type === 'block' && e.attacker === 1),
@@ -84,7 +84,7 @@ export const LESSONS: Lesson[] = [
   {
     title: 'Defesa baixa',
     text: 'Rasteiras passam pela defesa em pé. Agache + DEFENDER para bloquear 2.',
-    keys: 'S + Espaço · ↓ + LB',
+    keys: '{down} + {block} · ↓ + LB',
     goal: 2,
     dummy: 'low',
     progress: (m, events) =>
@@ -96,7 +96,7 @@ export const LESSONS: Lesson[] = [
   {
     title: 'Combo',
     text: 'Emende golpes: Soco Baixo, Soco Baixo, Soco Alto bem rápido, de perto.',
-    keys: 'F, F, G',
+    keys: '{lp}, {lp}, {hp}',
     goal: 1,
     dummy: 'parado',
     progress: (_, events) =>
@@ -105,7 +105,7 @@ export const LESSONS: Lesson[] = [
   {
     title: 'Golpe especial',
     text: 'Faça a Rajada Ômega 2 vezes: ↓, ↘, → e Soco Baixo, num movimento só.',
-    keys: 'S, S+D, D + F',
+    keys: '{down}, {down}+{right}, {right} + {lp}',
     goal: 2,
     dummy: 'parado',
     progress: (_, events) => count(events, (e) => e.type === 'special' && e.player === 0),
@@ -113,7 +113,7 @@ export const LESSONS: Lesson[] = [
   {
     title: 'Arremesso',
     text: 'Bem de perto, aperte → + Soco Baixo para agarrar. Não dá para defender!',
-    keys: 'D + F (de perto)',
+    keys: '{right} + {lp} (de perto)',
     goal: 1,
     dummy: 'parado',
     progress: (_, events) => count(events, (e) => e.type === 'throw' && e.player === 0),
@@ -121,7 +121,7 @@ export const LESSONS: Lesson[] = [
   {
     title: 'Anti-aéreo',
     text: 'O boneco vai pular em você. Derrube-o no ar com o Gancho: ↓ + Soco Alto.',
-    keys: 'S + G',
+    keys: '{down} + {hp}',
     goal: 1,
     dummy: 'jump',
     progress: (m, events) =>
