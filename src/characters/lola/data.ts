@@ -7,7 +7,7 @@ export const lola = defineCharacter({
   bio: 'Toca em toda festa do parque com uma caixa de som nas costas. O grave dela derruba qualquer um.',
   pronoun: 'ela',
   maxHealth: 950,
-  walkSpeed: 0.06,
+  walkSpeed: 0.084,
   jumpVelocity: 0.26,
   height: 1.7,
   damageMul: 0.95,

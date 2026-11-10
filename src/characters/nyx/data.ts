@@ -7,7 +7,7 @@ export const nyx = defineCharacter({
   bio: 'Engenheira-prodígio com um enxame de microrrobôs no traje: viram lâmina, martelo ou botas-foguete.',
   pronoun: 'ela',
   maxHealth: 1000,
-  walkSpeed: 0.055,
+  walkSpeed: 0.077,
   jumpVelocity: 0.25,
   height: 1.75,
   damageMul: 1,
