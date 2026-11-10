@@ -12,13 +12,13 @@ O plano de jogo detalhado está em `PLANO.md`. Este arquivo acompanha o checklis
 - [ ] README com GIF/prints da luta, do menu e do online
 - [ ] Link do jogo no "About" do repositório, com descrição e tópicos (depende do `gh`)
 - [ ] Releases versionadas (tags `v0.x` com changelog)
-- [ ] Dependabot ativo (npm + GitHub Actions)
+- [x] Dependabot ativo (npm + GitHub Actions; PRs semanais na `dev`)
 - [ ] Backlog restante registrado como issues
 
 ## Backlog
 
 1. GIF de gameplay e prints no README
-2. Testes do netcode: rollback com perda/atraso de pacotes, checksum divergente e reconexão
+2. Testes do netcode: reconexão (perda em rajada, fora de ordem, duplicados, latência assimétrica, checksum divergente e limite de predição: feito)
 3. Performance no celular: medir FPS em aparelho médio, LOD/sombras adaptativas, limitar o bloom
 4. Acessibilidade: remapeamento de teclas (reduzir tremor de tela e flashes: feito)
 5. Release `v1.0` com changelog gerado a partir dos PRs
@@ -28,4 +28,5 @@ O plano de jogo detalhado está em `PLANO.md`. Este arquivo acompanha o checklis
 ## Log
 
 - 2026-11-10 — Fase 1: licença MIT, regras de autonomia no AGENTS.md, roadmap.
+- 2026-11-10 — 6 novos testes de rollback (rajada de perda, fora de ordem/duplicados, latência assimétrica, checksum divergente, limite de predição).
 - 2026-11-10 — Opções de acessibilidade: tremor de tela (normal/reduzido/desligado, respeita prefers-reduced-motion) e flashes reduzidos.
