@@ -204,6 +204,7 @@ export class App {
     }
     this.renderer.render(this.match, dt, this.previous, alpha);
     const ping = this.session?.mode === 'online' ? this.online?.ping() : undefined;
+    this.perf.device = `${this.renderer.gpuName} · gráficos ${this.renderer.effectiveQuality}`;
     this.perf.frame(now, ping);
   }
 
