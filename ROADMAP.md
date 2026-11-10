@@ -37,3 +37,4 @@ O plano de jogo detalhado está em `PLANO.md`. Este arquivo acompanha o checklis
 - 2026-11-10 — GIF de luta e prints (título, seleção, luta) no README, capturados com Chrome headless.
 - 2026-11-10 — Backlog restante virou issues (#14–#19). Status: pronto para revisão.
 - 2026-11-10 — Qualidade gráfica adaptativa ('auto' por padrão): desce para 'baixo' abaixo de 50 FPS por 3 s e sobe para 'alto' acima de 58 FPS por 10 s.
+- 2026-11-10 — Balanceamento (#16): Passo Sombrio invencível só até reaparecer (15 frames, antes 26); Quique Gelatinoso com recuperação 24 (-12 na defesa, antes -2); Mergulho da Águia com recuperação 16 (-4 na defesa, antes +2).
