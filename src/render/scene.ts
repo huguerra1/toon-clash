@@ -57,6 +57,30 @@ const VISUAL_PROPS: Record<string, PropName> = {
 };
 const ALL_PROPS = [...new Set(Object.values(VISUAL_PROPS))];
 
+/**
+ * Nome curto da placa de vídeo. O Chrome devolve algo como
+ * "ANGLE (NVIDIA, NVIDIA GeForce RTX 3050 (0x00002507) Direct3D11 vs_5_0 ps_5_0, D3D11)".
+ */
+export function shortGpuName(gl: WebGLRenderingContext | WebGL2RenderingContext): string {
+  const info = gl.getExtension('WEBGL_debug_renderer_info');
+  const raw = String(
+    info ? gl.getParameter(info.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER),
+  );
+  return cleanGpuName(raw);
+}
+
+export function cleanGpuName(raw: string): string {
+  let name = raw;
+  if (raw.startsWith('ANGLE (')) {
+    // "ANGLE (fabricante, nome da placa (0x...) Direct3D11 ..., D3D11)": fica o segundo campo.
+    name = raw.slice('ANGLE ('.length).split(', ')[1] ?? raw;
+    name = name
+      .replace(/\s*\(0x[0-9a-f]+\).*$/i, '')
+      .replace(/\s+(Direct3D|OpenGL|Metal|Vulkan).*$/i, '');
+  }
+  return name.replace(/\s+/g, ' ').trim() || 'placa desconhecida';
+}
+
 interface Point {
   x: number;
   y: number;
@@ -184,6 +208,7 @@ export class GameRenderer {
   private time = 0;
   /** Fase do ciclo de passos de cada lutador (avança com a distância andada). */
   private readonly walkPhase: [number, number] = [0, 0];
+  private cachedGpu: string | null = null;
   /** Último golpe recebido por cada lutador (para a reação de quem apanha). */
   private readonly reactions: [HitReaction, HitReaction] = [
     { heavy: false, high: true },
@@ -418,10 +443,27 @@ export class GameRenderer {
   /** Aplica o nível efetivo ('alto': brilho e sombras suaves; 'baixo': mais leve para celular). */
   setQuality(level: QualityLevel): void {
     this.effectiveQuality = level;
-    this.post.enabled = level === 'alto';
-    this.renderer.shadowMap.type = level === 'alto' ? THREE.PCFSoftShadowMap : THREE.BasicShadowMap;
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, level === 'alto' ? 2 : 1.25));
+    const high = level === 'alto';
+    this.post.enabled = high;
+    // No 'baixo' a sombra sai de vez: ela desenha a cena inteira mais uma vez a cada quadro.
+    if (this.renderer.shadowMap.enabled !== high) {
+      this.renderer.shadowMap.enabled = high;
+      this.scene.traverse((o) => {
+        if (o instanceof THREE.Mesh) {
+          for (const m of Array.isArray(o.material) ? o.material : [o.material])
+            m.needsUpdate = true;
+        }
+      });
+    }
+    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, high ? 2 : 1));
     this.resize();
+  }
+
+  /** Placa de vídeo que o navegador está usando (ex.: "NVIDIA GeForce RTX 3050"). */
+  get gpuName(): string {
+    if (this.cachedGpu === null) this.cachedGpu = shortGpuName(this.renderer.getContext());
+    return this.cachedGpu;
   }
 
   /** Salva a preferência do jogador ('alto', 'baixo' ou 'auto') e aplica o nível efetivo. */

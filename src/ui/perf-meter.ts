@@ -131,6 +131,8 @@ export class PerfMeter {
   private last = -1;
   private lastPaint = -Infinity;
   private text = '';
+  /** Linha extra: placa de vídeo em uso e qualidade gráfica (ajuda a achar lentidão). */
+  device = '';
 
   constructor(parent: HTMLElement, visible = loadShowPerf()) {
     this.visible = visible;
@@ -185,7 +187,8 @@ export class PerfMeter {
     else if (frameMs >= 0) this.stats.add(now, frameMs);
     if (now - this.lastPaint < PERF_REFRESH_MS) return;
     this.lastPaint = now;
-    const text = formatPerf(this.stats.summary(now), ping);
+    const perf = formatPerf(this.stats.summary(now), ping);
+    const text = this.device ? `${perf}\n${this.device}` : perf;
     if (text !== this.text) {
       this.text = text;
       this.el.textContent = text;

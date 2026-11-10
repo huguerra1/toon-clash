@@ -1,9 +1,10 @@
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import type { CharacterLook } from '../characters/look';
 import { emblemTexture } from './emblems';
 import { type MouthShape, mouthTexture } from './face-textures';
 import { type BoundRig, DANGLE_PREFIX, PROP_PREFIX, bindRig } from './rig';
-import { addOutline } from './toon-material';
+import { addExtrudedOutline, addOutline } from './toon-material';
 
 export const JOINTS = [
   'spine',
@@ -148,9 +149,65 @@ export class FighterModel {
       this.build();
       this.nameParts();
     }
+    this.mergeStatic();
     this.root.traverse((o) => {
       if (o instanceof THREE.Mesh && !o.userData.outline) o.castShadow = true;
     });
+  }
+
+  /**
+   * Junta as peças fixas de cada articulação num só objeto, com as cores nos vértices.
+   * Um lutador tinha ~150 peças (300 desenhos por quadro com os contornos, o dobro com sombra);
+   * juntando por articulação ficam ~25. O que se mexe sozinho (pálpebras, sobrancelhas, boca,
+   * acessórios de golpe) continua separado.
+   */
+  private mergeStatic(): void {
+    const keep = new Set<THREE.Object3D>();
+    for (const objects of this.props.values()) for (const o of objects) keep.add(o);
+    for (const eye of this.eyes) keep.add(eye.lid);
+    for (const brow of this.brows) keep.add(brow.mesh);
+    if (this.mouth) keep.add(this.mouth);
+
+    const nodes: THREE.Object3D[] = [];
+    this.body.traverse((node) => {
+      if (!(node instanceof THREE.Mesh)) nodes.push(node);
+    });
+    for (const node of nodes) {
+      const buckets = new Map<string, { glow: boolean; color: number; meshes: THREE.Mesh[] }>();
+      for (const child of node.children) {
+        if (!(child instanceof THREE.Mesh) || child.userData.outline || keep.has(child)) continue;
+        if (!(child.material instanceof THREE.MeshToonMaterial)) continue;
+        // Peça com filhos de verdade (não só o contorno) fica como está.
+        if (child.children.some((c) => !c.userData.outline)) continue;
+        const glow = child.material.emissiveIntensity > 1;
+        const color = child.material.color.getHex();
+        // Partes que brilham precisam do próprio emissivo; o resto divide um material só.
+        const key = glow ? `glow:${color}` : 'base';
+        const bucket = buckets.get(key) ?? { glow, color, meshes: [] };
+        bucket.meshes.push(child);
+        buckets.set(key, bucket);
+      }
+      for (const { glow, color, meshes } of buckets.values()) {
+        if (meshes.length < 2) continue;
+        const merged = new THREE.Mesh(
+          mergeColored(meshes),
+          this.material(glow ? color : 0xffffff, glow),
+        );
+        if (!glow) merged.material.vertexColors = true;
+        for (const m of meshes) {
+          node.remove(m);
+          this.forgetMaterial(m.material as THREE.MeshToonMaterial);
+        }
+        node.add(merged);
+        addExtrudedOutline(merged, 0.022);
+      }
+    }
+  }
+
+  private forgetMaterial(m: THREE.MeshToonMaterial): void {
+    const i = this.materials.indexOf(m);
+    if (i >= 0) this.materials.splice(i, 1);
+    this.baseEmissive.delete(m);
   }
 
   /** Dá nomes padronizados às partes, para exportar como .glb e editar no Blender. */
@@ -342,6 +399,11 @@ export class FighterModel {
   /** Pinta o modelo inteiro de uma cor (ex.: virar troféu de ouro). */
   tint(color: number, emissive = 0): void {
     for (const m of this.materials) {
+      // Peças juntadas guardam a cor nos vértices: desliga para pintar tudo da mesma cor.
+      if (m.vertexColors) {
+        m.vertexColors = false;
+        m.needsUpdate = true;
+      }
       m.color.setHex(color);
       this.baseEmissive.get(m)!.setHex(emissive);
     }
@@ -1046,6 +1108,33 @@ export class FighterModel {
     }
     this.addProp('wings', wings);
   }
+}
+
+/**
+ * Junta várias peças (filhas diretas do mesmo nó) numa geometria só, com a cor de cada peça
+ * nos vértices. Fica só posição, normal e cor, para peças de origens diferentes combinarem.
+ */
+function mergeColored(meshes: THREE.Mesh[]): THREE.BufferGeometry {
+  const parts = meshes.map((mesh) => {
+    mesh.updateMatrix();
+    const g = mesh.geometry.index ? mesh.geometry.toNonIndexed() : mesh.geometry.clone();
+    for (const name of Object.keys(g.attributes)) {
+      if (name !== 'position' && name !== 'normal') g.deleteAttribute(name);
+    }
+    g.morphAttributes = {};
+    if (!g.attributes.normal) g.computeVertexNormals();
+    g.applyMatrix4(mesh.matrix);
+    const { r, g: green, b } = (mesh.material as THREE.MeshToonMaterial).color;
+    const count = g.attributes.position!.count;
+    const colors = new Float32Array(count * 3);
+    for (let i = 0; i < count; i++) colors.set([r, green, b], i * 3);
+    g.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    return g;
+  });
+  const merged = mergeGeometries(parts, false);
+  for (const part of parts) part.dispose();
+  if (!merged) throw new Error('Não foi possível juntar as peças do lutador.');
+  return merged;
 }
 
 /** Cor um pouco mais escura (sobrancelhas). */
