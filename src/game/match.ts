@@ -96,7 +96,7 @@ export interface MatchState {
   events: GameEvent[];
 }
 
-const BUFFER_TICKS = 5;
+const BUFFER_TICKS = 8;
 const PLAYERS: readonly PlayerIndex[] = [0, 1];
 
 export function defaultConfig(characters: [CharacterId, CharacterId]): MatchConfig {

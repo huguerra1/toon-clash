@@ -113,6 +113,8 @@ function hex(color: number): string {
 /** Fluxo do jogo: telas, partida, arcade e treino. */
 export class App {
   match: MatchState;
+  /** Estado do tick anterior, para o renderer interpolar o movimento entre os dois. */
+  private previous: MatchState | null = null;
   session: Session | null = null;
   readonly hud = new Hud();
   /** Contador de desempenho opcional; fica fora do #ui para aparecer por cima das telas. */
@@ -189,15 +191,18 @@ export class App {
     this.screen?.tick?.();
   }
 
-  /** Desenha um quadro. `now` é o horário do quadro em ms (para o contador de desempenho). */
-  render(dt: number, now: number): void {
+  /**
+   * Desenha um quadro. `now` é o horário do quadro em ms (para o contador de desempenho) e
+   * `alpha` a fração do tempo entre o último tick e o próximo (para interpolar o movimento).
+   */
+  render(dt: number, now: number, alpha = 1): void {
     if (this.renderer.quality === 'auto') {
       const level = this.adaptiveQuality.frame(now);
       if (level !== this.renderer.effectiveQuality) {
         this.renderer.setQuality(level);
       }
     }
-    this.renderer.render(this.match, dt);
+    this.renderer.render(this.match, dt, this.previous, alpha);
     const ping = this.session?.mode === 'online' ? this.online?.ping() : undefined;
     this.perf.frame(now, ping);
   }
@@ -279,7 +284,7 @@ export class App {
       action: () => this.show(this.selectScreen(mode, l.id)),
     }));
     const menu = new Menu('Dificuldade', items, this.sounds, () => this.show(this.mainMenu()));
-    menu.index = 1;
+    menu.index = 0;
     menu.render();
     const el = html('div', 'screen');
     el.appendChild(menu.el);
@@ -522,10 +527,11 @@ export class App {
     const cycle: StageId[] = ['rooftop', 'park', 'forest', 'sweets', 'base'];
     s.characters = [s.characters[0], opponent];
     s.stage = opponent === 'zhaar' ? 'ship' : cycle[ladder.index % cycle.length]!;
-    // A CPU fica mais esperta a cada luta do arcade.
+    // Só as duas últimas lutas sobem um degrau em relação ao nível da sessão.
     const order = CPU_LEVELS.map((l) => l.id);
     const base = order.indexOf(s.level);
-    const level = order[Math.min(order.length - 1, base + Math.floor(ladder.index / 2))]!;
+    const increase = ladder.index >= ladder.opponents.length - 2 ? 1 : 0;
+    const level = order[Math.min(order.length - 1, base + increase)]!;
     s.sources = [
       { kind: 'local', player: 'both' },
       { kind: 'cpu', brain: createCpu(level, Math.floor(Math.random() * 1e9)) },
@@ -699,6 +705,7 @@ export class App {
   /** Mostra um novo estado da partida (local ou vindo do rollback online). */
   present(match: MatchState, events: readonly GameEvent[] = match.events): void {
     const before = this.match.phase;
+    this.previous = this.match;
     this.match = match;
     this.renderer.handleEvents(events, this.match);
     this.hud.handleEvents(events, this.match);
@@ -865,7 +872,13 @@ export class App {
       'screen continue-screen',
       `<h2>CONTINUAR?</h2><div class="count">${count}</div><p>ENTER para continuar</p>`,
     );
-    const retry = () => this.show(this.versusScreen());
+    const retry = () => {
+      const s = this.session!;
+      const order = CPU_LEVELS.map((l) => l.id);
+      s.level = order[Math.max(0, order.indexOf(s.level) - 1)]!;
+      this.arcadeStage();
+      this.show(this.versusScreen());
+    };
     el.addEventListener('click', retry);
     return {
       el,

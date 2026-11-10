@@ -291,23 +291,23 @@ Multiplicador de dano: 0.95. Multiplicador de movimento da forma: 1.
 
 ## Warlord Zhaar
 
-Multiplicador de dano: 1.2. Multiplicador de movimento da forma: 1.
+Multiplicador de dano: 1. Multiplicador de movimento da forma: 1.
 
 | Golpe                            | Input                     | Startup | Active | Recovery | Total | Dano | Chip | Hitstun | Blockstun | Vant. hit | Vant. block | Propriedades                     |
 | -------------------------------- | ------------------------- | ------: | -----: | -------: | ----: | ---: | ---: | ------: | --------: | --------: | ----------: | -------------------------------- |
-| Jab (lp)                         | Soco Baixo                |       4 |      3 |        8 |    15 |   36 |    0 |      15 |         9 |        +7 |          +1 | alto; emenda em: lp, hp          |
-| Direto (hp)                      | Soco Alto                 |       6 |      3 |       14 |    23 |   66 |    0 |      19 |        11 |        +5 |          -3 | alto                             |
-| Chute Frontal (lk)               | Chute Baixo               |       7 |      3 |       12 |    22 |   54 |    0 |      17 |        10 |        +5 |          -2 | médio; emenda em: hk             |
-| Chute Giratório (hk)             | Chute Alto                |      10 |      4 |       18 |    32 |   90 |    0 |      22 |        12 |         — |          -6 | médio; derruba                   |
-| Soco Agachado (d_lp)             | ↓ + Soco Baixo            |       4 |      3 |        7 |    14 |   26 |    0 |      14 |         8 |        +7 |          +1 | médio; emenda em: d_lp, d_hp     |
-| Gancho (d_hp)                    | ↓ + Soco Alto             |       7 |      4 |       24 |    35 |  132 |    0 |       — |        14 |         — |         -10 | médio; lançador                  |
-| Rasteira Curta (d_lk)            | ↓ + Chute Baixo           |       5 |      3 |       10 |    18 |   30 |    0 |      14 |         8 |        +4 |          -2 | baixo; emenda em: d_hk           |
-| Rasteira (d_hk)                  | ↓ + Chute Alto            |       9 |      4 |       22 |    35 |   72 |    0 |       — |        12 |         — |         -10 | baixo; derruba                   |
-| Soco Aéreo (j_lp)                | (no ar) Soco Baixo        |       5 |      8 |        6 |    19 |   60 |    0 |      18 |        10 |       +12 |          +4 | médio                            |
-| Soco Aéreo Forte (j_hp)          | (no ar) Soco Alto         |       6 |      8 |        6 |    20 |   72 |    0 |      20 |        11 |       +14 |          +5 | médio                            |
-| Voadora (j_lk)                   | (no ar) Chute Baixo       |       5 |     10 |        6 |    21 |   66 |    0 |      18 |        10 |       +12 |          +4 | médio                            |
-| Voadora Forte (j_hk)             | (no ar) Chute Alto        |       7 |     10 |        6 |    23 |   84 |    0 |      21 |        11 |       +15 |          +5 | médio                            |
-| Arremesso (throw)                | → + Soco Baixo (de perto) |       4 |      3 |       24 |    31 |  132 |    0 |       — |         — |         — |           — | agarrão (indefensável)           |
-| Raio Conquistador (conquest_ray) | ↓ → + Soco Alto           |      16 |      1 |       22 |    39 |  114 |   17 |      22 |         — |         — |           — | especial; projétil (médio)       |
-| Pisão Sísmico (seismic_stomp)    | ↓ ↓ + Chute Alto          |      20 |      5 |       26 |    51 |  108 |   16 |       — |        14 |         — |         -12 | baixo; especial; derruba         |
-| Garra Tirana (tyrant_claw)       | ← → + Soco Baixo          |      12 |      4 |       26 |    42 |  144 |    0 |       — |         — |         — |           — | especial; agarrão (indefensável) |
+| Jab (lp)                         | Soco Baixo                |       4 |      3 |        8 |    15 |   30 |    0 |      15 |         9 |        +7 |          +1 | alto; emenda em: lp, hp          |
+| Direto (hp)                      | Soco Alto                 |       6 |      3 |       14 |    23 |   55 |    0 |      19 |        11 |        +5 |          -3 | alto                             |
+| Chute Frontal (lk)               | Chute Baixo               |       7 |      3 |       12 |    22 |   45 |    0 |      17 |        10 |        +5 |          -2 | médio; emenda em: hk             |
+| Chute Giratório (hk)             | Chute Alto                |      10 |      4 |       18 |    32 |   75 |    0 |      22 |        12 |         — |          -6 | médio; derruba                   |
+| Soco Agachado (d_lp)             | ↓ + Soco Baixo            |       4 |      3 |        7 |    14 |   22 |    0 |      14 |         8 |        +7 |          +1 | médio; emenda em: d_lp, d_hp     |
+| Gancho (d_hp)                    | ↓ + Soco Alto             |       7 |      4 |       24 |    35 |  110 |    0 |       — |        14 |         — |         -10 | médio; lançador                  |
+| Rasteira Curta (d_lk)            | ↓ + Chute Baixo           |       5 |      3 |       10 |    18 |   25 |    0 |      14 |         8 |        +4 |          -2 | baixo; emenda em: d_hk           |
+| Rasteira (d_hk)                  | ↓ + Chute Alto            |       9 |      4 |       22 |    35 |   60 |    0 |       — |        12 |         — |         -10 | baixo; derruba                   |
+| Soco Aéreo (j_lp)                | (no ar) Soco Baixo        |       5 |      8 |        6 |    19 |   50 |    0 |      18 |        10 |       +12 |          +4 | médio                            |
+| Soco Aéreo Forte (j_hp)          | (no ar) Soco Alto         |       6 |      8 |        6 |    20 |   60 |    0 |      20 |        11 |       +14 |          +5 | médio                            |
+| Voadora (j_lk)                   | (no ar) Chute Baixo       |       5 |     10 |        6 |    21 |   55 |    0 |      18 |        10 |       +12 |          +4 | médio                            |
+| Voadora Forte (j_hk)             | (no ar) Chute Alto        |       7 |     10 |        6 |    23 |   70 |    0 |      21 |        11 |       +15 |          +5 | médio                            |
+| Arremesso (throw)                | → + Soco Baixo (de perto) |       4 |      3 |       24 |    31 |  110 |    0 |       — |         — |         — |           — | agarrão (indefensável)           |
+| Raio Conquistador (conquest_ray) | ↓ → + Soco Alto           |      16 |      1 |       22 |    39 |   95 |   14 |      22 |         — |         — |           — | especial; projétil (médio)       |
+| Pisão Sísmico (seismic_stomp)    | ↓ ↓ + Chute Alto          |      20 |      5 |       26 |    51 |   90 |   14 |       — |        14 |         — |         -12 | baixo; especial; derruba         |
+| Garra Tirana (tyrant_claw)       | ← → + Soco Baixo          |      12 |      4 |       26 |    42 |  120 |    0 |       — |         — |         — |           — | especial; agarrão (indefensável) |
