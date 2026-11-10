@@ -11,6 +11,11 @@ updates:
       # Atualizações pequenas chegam num PR só, para não lotar a fila.
       menores:
         update-types: [minor, patch]
+    ignore:
+      # O TypeScript 7 ainda não é aceito pelo typescript-eslint 8 (o `npm ci` falha com ERESOLVE).
+      # Remover esta regra quando o typescript-eslint passar a aceitar o TypeScript 7.
+      - dependency-name: typescript
+        update-types: [version-update:semver-major]
 
   # Versões das actions usadas no CI.
   - package-ecosystem: github-actions
