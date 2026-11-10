@@ -39,7 +39,8 @@ export const umbra = defineCharacter({
       active: 1,
       recovery: 12,
       damage: 0,
-      invulnerable: 26,
+      // Invencível só até reaparecer (startup + ativo); a recuperação pode ser punida.
+      invulnerable: 15,
       teleport: true,
       special: true,
       visual: 'shadow',

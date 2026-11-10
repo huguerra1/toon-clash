@@ -32,7 +32,8 @@ export const feral = defineCharacter({
       anim: 'airKick',
       startup: 8,
       active: 30,
-      recovery: 10,
+      // Overhead rápido não pode ficar com vantagem na defesa.
+      recovery: 16,
       damage: 80,
       blockstun: 12,
       hitbox: { x: 0, y: 0, w: 1.0, h: 0.8 },
