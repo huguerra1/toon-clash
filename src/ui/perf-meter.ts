@@ -137,10 +137,13 @@ export class PerfMeter {
     this.el = document.createElement('div');
     this.el.className = 'perf-meter';
     this.el.setAttribute('aria-hidden', 'true');
+    // Centro da parte de baixo: no topo, cobria o nome do jogador 2 (issue #17); nos cantos de
+    // baixo ficam os controles de toque do celular.
     Object.assign(this.el.style, {
       position: 'fixed',
-      top: 'max(4px, env(safe-area-inset-top))',
-      right: 'max(4px, env(safe-area-inset-right))',
+      bottom: 'max(4px, env(safe-area-inset-bottom))',
+      left: '50%',
+      transform: 'translateX(-50%)',
       zIndex: '50',
       padding: '2px 6px',
       borderRadius: '4px',
@@ -148,7 +151,7 @@ export class PerfMeter {
       color: '#fff',
       font: '11px/1.35 ui-monospace, Menlo, Consolas, monospace',
       whiteSpace: 'pre',
-      textAlign: 'right',
+      textAlign: 'center',
       pointerEvents: 'none',
       display: visible ? 'block' : 'none',
     });
