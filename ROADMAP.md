@@ -18,7 +18,7 @@ O plano de jogo detalhado está em `PLANO.md`. Este arquivo acompanha o checklis
 ## Backlog
 
 1. GIF de gameplay e prints no README
-2. Testes do netcode: rollback com perda/atraso de pacotes, checksum divergente e reconexão
+2. Testes do netcode: reconexão (perda em rajada, fora de ordem, duplicados, latência assimétrica, checksum divergente e limite de predição: feito)
 3. Performance no celular: medir FPS em aparelho médio, LOD/sombras adaptativas, limitar o bloom
 4. Acessibilidade: remapeamento de teclas e opção de reduzir tremor de tela/flashes
 5. Release `v1.0` com changelog gerado a partir dos PRs
@@ -28,3 +28,4 @@ O plano de jogo detalhado está em `PLANO.md`. Este arquivo acompanha o checklis
 ## Log
 
 - 2026-11-10 — Fase 1: licença MIT, regras de autonomia no AGENTS.md, roadmap.
+- 2026-11-10 — 6 novos testes de rollback (rajada de perda, fora de ordem/duplicados, latência assimétrica, checksum divergente, limite de predição).
