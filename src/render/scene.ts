@@ -69,6 +69,14 @@ export function shortGpuName(gl: WebGLRenderingContext | WebGL2RenderingContext)
   return cleanGpuName(raw);
 }
 
+/**
+ * Renderizadores por software: aparecem quando a aceleração do navegador está desligada, a placa
+ * está na lista de bloqueio ou falta driver. Nesses casos o jogo roda a ~10–15 FPS.
+ */
+export function isSoftwareRenderer(name: string): boolean {
+  return /basic render|swiftshader|llvmpipe|softpipe|software|warp/i.test(name);
+}
+
 export function cleanGpuName(raw: string): string {
   let name = raw;
   if (raw.startsWith('ANGLE (')) {
@@ -442,6 +450,8 @@ export class GameRenderer {
 
   /** Aplica o nível efetivo ('alto': brilho e sombras suaves; 'baixo': mais leve para celular). */
   setQuality(level: QualityLevel): void {
+    // Sem placa de vídeo (renderização por software) só o 'baixo' é jogável.
+    if (this.softwareRendering) level = 'baixo';
     this.effectiveQuality = level;
     const high = level === 'alto';
     this.post.enabled = high;
@@ -458,6 +468,11 @@ export class GameRenderer {
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, high ? 2 : 1));
     this.resize();
+  }
+
+  /** O navegador está desenhando sem a placa de vídeo (aceleração desligada ou sem driver). */
+  get softwareRendering(): boolean {
+    return isSoftwareRenderer(this.gpuName);
   }
 
   /** Placa de vídeo que o navegador está usando (ex.: "NVIDIA GeForce RTX 3050"). */
