@@ -13,7 +13,8 @@ import { getLook } from './characters/looks';
 import { STARTING_ROSTER, getCharacter } from './characters/roster';
 import type { CharacterId } from './combat/types';
 import type { Controls, MenuEvent } from './core/controls';
-import { type PlayerInput, emptyInput, mergeInputs } from './core/input';
+import { type Button, type PlayerInput, emptyInput, mergeInputs } from './core/input';
+import { keysLabel } from './core/keymap';
 import type { GameEvent } from './game/events';
 import { type MatchState, createMatch, defaultConfig, stepMatch } from './game/match';
 import {
@@ -30,6 +31,7 @@ import { FLASH_OPTIONS, SCREEN_SHAKE_OPTIONS, cycleOption } from './ui/accessibi
 import { Menu, type MenuItem } from './ui/menu';
 import { fighterPortrait } from './render/portraits';
 import { BUTTON_NAMES, moveList } from './ui/notation';
+import { RemapView } from './ui/remap-view';
 import { TutorialView } from './ui/tutorial-view';
 
 export type Mode = 'arcade' | 'versus' | 'cpu' | 'training' | 'tutorial' | 'online';
@@ -888,38 +890,54 @@ export class App {
   }
 
   controlsScreen(): Screen {
-    const row = (name: string, p1: string, p2: string, pad: string) =>
-      `<tr><td>${name}</td><td>${p1}</td><td>${p2}</td><td>${pad}</td></tr>`;
-    const el = html(
+    const keymap = this.controls.keymap;
+    const row = (name: string, p1: string, p2: string, pad = '') =>
+      `<tr><td>${name}</td><td>${p1}</td><td>${p2}</td>${pad}</tr>`;
+    const padCell = (text: string, rows = 1) => `<td rowspan="${rows}">${text}</td>`;
+    const keys = (name: string, button: Button, pad = '') =>
+      row(name, keysLabel(keymap, 0, button), keysLabel(keymap, 1, button), pad);
+    const table = html(
       'div',
-      'screen',
-      `<div class="panel controls">
-        <h2>Controles</h2>
-        <table>
-          <tr><th></th><th>Jogador 1</th><th>Jogador 2</th><th>Controle</th></tr>
-          ${row('Mover / pular / agachar', 'W A S D', 'Setas', 'Direcional ou analógico')}
-          ${row(BUTTON_NAMES.lp, 'F', 'K ou Num 4', 'X / □')}
-          ${row(BUTTON_NAMES.hp, 'G', 'L ou Num 5', 'Y / △')}
-          ${row(BUTTON_NAMES.lk, 'V', ', ou Num 1', 'A / ✕')}
-          ${row(BUTTON_NAMES.hk, 'B', '. ou Num 2', 'B / ○')}
-          ${row('Defender', 'Espaço', 'J ou Num 0', 'LB / RB / gatilhos')}
-          ${row('Pausa', 'ESC', 'ESC', 'Start')}
-        </table>
-        <p>Golpes especiais são sequências de direções + botão (ex.: ↓ → + Soco Baixo). Veja a lista de golpes no menu de pausa.</p>
-        <p class="help">No celular, use os botões na tela. ESC ou ENTER volta.</p>
-      </div>`,
+      'controls-table',
+      `<table>
+        <tr><th></th><th>Jogador 1</th><th>Jogador 2</th><th>Controle</th></tr>
+        ${keys('Pular (cima)', 'up', padCell('Direcional ou analógico', 4))}
+        ${keys('Agachar (baixo)', 'down')}
+        ${keys('Esquerda', 'left')}
+        ${keys('Direita', 'right')}
+        ${keys(BUTTON_NAMES.lp, 'lp', padCell('X / □'))}
+        ${keys(BUTTON_NAMES.hp, 'hp', padCell('Y / △'))}
+        ${keys(BUTTON_NAMES.lk, 'lk', padCell('A / ✕'))}
+        ${keys(BUTTON_NAMES.hk, 'hk', padCell('B / ○'))}
+        ${keys('Defender', 'block', padCell('LB / RB / gatilhos'))}
+        ${row('Pausa', 'ESC', 'ESC', padCell('Start'))}
+      </table>
+      <p>Golpes especiais são sequências de direções + botão (ex.: ↓ → + Soco Baixo). Veja a lista de golpes no menu de pausa.</p>
+      <p class="help">No celular, use os botões na tela. Os menus sempre usam WASD/setas, ENTER e ESC.</p>`,
     );
-    const back = () => {
-      this.sounds.back();
-      this.show(this.mainMenu());
-    };
-    el.addEventListener('click', back);
-    return {
-      el,
-      handle: (e) => {
-        if (e.action === 'back' || e.action === 'pause' || e.action === 'confirm') back();
+    const back = () => this.show(this.mainMenu());
+    const items: MenuItem[] = [
+      {
+        label: 'Remapear teclas',
+        hint: 'Escolha as teclas de luta de cada jogador',
+        action: () => this.show(this.remapScreen()),
       },
-    };
+      { label: 'Voltar', action: back },
+    ];
+    const menu = new Menu('Controles', items, this.sounds, back);
+    menu.el.classList.add('controls');
+    menu.el.querySelector('ul')!.before(table);
+    const el = html('div', 'screen');
+    el.appendChild(menu.el);
+    return { el, handle: (e) => menu.handle(e) };
+  }
+
+  /** Troca as teclas de luta do teclado; as escolhas ficam salvas no navegador. */
+  remapScreen(): Screen {
+    const view = new RemapView(this.controls, this.sounds, () => this.show(this.controlsScreen()));
+    const el = html('div', 'screen');
+    el.appendChild(view.el);
+    return { el, handle: (e) => view.handle(e) };
   }
 
   optionsScreen(): Screen {

@@ -1,4 +1,5 @@
 import { type Button, type PlayerInput, emptyInput, mergeInputs } from './input';
+import { type Keymap, buttonFor, isFightKey, loadKeymap } from './keymap';
 
 export type MenuAction = 'up' | 'down' | 'left' | 'right' | 'confirm' | 'back' | 'pause';
 
@@ -6,37 +7,6 @@ export interface MenuEvent {
   player: 0 | 1;
   action: MenuAction;
 }
-
-/** Teclas de luta por jogador (KeyboardEvent.code = posição física, funciona em ABNT2). */
-export const FIGHT_KEYS: [Record<string, Button>, Record<string, Button>] = [
-  {
-    KeyW: 'up',
-    KeyS: 'down',
-    KeyA: 'left',
-    KeyD: 'right',
-    KeyF: 'lp',
-    KeyG: 'hp',
-    KeyV: 'lk',
-    KeyB: 'hk',
-    Space: 'block',
-  },
-  {
-    ArrowUp: 'up',
-    ArrowDown: 'down',
-    ArrowLeft: 'left',
-    ArrowRight: 'right',
-    KeyK: 'lp',
-    KeyL: 'hp',
-    Comma: 'lk',
-    Period: 'hk',
-    KeyJ: 'block',
-    Numpad4: 'lp',
-    Numpad5: 'hp',
-    Numpad1: 'lk',
-    Numpad2: 'hk',
-    Numpad0: 'block',
-  },
-];
 
 const MENU_KEYS: [Record<string, MenuAction>, Record<string, MenuAction>] = [
   {
@@ -106,26 +76,61 @@ const MENU_ACTIONS: readonly MenuAction[] = [
 export class Controls {
   private readonly keys = new Set<string>();
   private readonly prevMenu: [Set<MenuAction>, Set<MenuAction>] = [new Set(), new Set()];
+  private fightKeys: Keymap;
+  /** Quem espera a próxima tecla apertada (tela de remapear). */
+  private capture: ((code: string) => void) | null = null;
   /** Input do controle de toque na tela (sempre jogador 1). */
   touch: PlayerInput = emptyInput();
   touchMenu = new Set<MenuAction>();
 
-  constructor(target: Window = window) {
+  constructor(target: Window = window, keymap: Keymap = loadKeymap()) {
+    this.fightKeys = keymap;
     target.addEventListener('keydown', (e) => {
       if (isTyping(e)) return;
-      if (isMapped(e.code)) e.preventDefault();
+      if (this.capture) {
+        e.preventDefault();
+        if (e.repeat) return;
+        const onKey = this.capture;
+        this.capture = null;
+        this.keys.add(e.code);
+        // A tecla capturada não deve virar comando de menu no próximo tick.
+        this.syncMenu();
+        onKey(e.code);
+        return;
+      }
+      if (this.isMapped(e.code)) e.preventDefault();
       this.keys.add(e.code);
     });
     target.addEventListener('keyup', (e) => this.keys.delete(e.code));
     target.addEventListener('blur', () => this.keys.clear());
   }
 
+  /** Teclas de luta em uso. */
+  get keymap(): Keymap {
+    return this.fightKeys;
+  }
+
+  /** Troca as teclas de luta na hora (não salva; veja saveKeymap). */
+  setKeymap(keymap: Keymap): void {
+    this.fightKeys = keymap;
+  }
+
+  /**
+   * Entrega o código da próxima tecla apertada a `onKey`, sem repassá-la ao jogo nem aos menus.
+   * Devolve uma função que cancela a espera.
+   */
+  captureKey(onKey: (code: string) => void): () => void {
+    this.capture = onKey;
+    return () => {
+      if (this.capture === onKey) this.capture = null;
+    };
+  }
+
   /** Input de luta do jogador neste tick. */
   read(player: 0 | 1): PlayerInput {
     const input = emptyInput();
-    const map = FIGHT_KEYS[player];
     for (const code of this.keys) {
-      const button = map[code];
+      const button = buttonFor(this.fightKeys, player, code);
       if (button) input[button] = true;
     }
     const pad = this.padInput(player);
@@ -153,6 +158,11 @@ export class Controls {
 
   isKeyDown(code: string): boolean {
     return this.keys.has(code);
+  }
+
+  /** Tecla usada pelo jogo: o navegador não deve rolar a página nem fazer outra ação. */
+  private isMapped(code: string): boolean {
+    return isFightKey(this.fightKeys, code) || MENU_KEYS.some((map) => Object.hasOwn(map, code));
   }
 
   private menuState(player: 0 | 1): Set<MenuAction> {
@@ -199,10 +209,6 @@ function getPad(player: 0 | 1): Gamepad | null {
   if (typeof navigator === 'undefined' || !navigator.getGamepads) return null;
   const pads = [...navigator.getGamepads()].filter((p): p is Gamepad => p !== null && p.connected);
   return pads[player] ?? null;
-}
-
-function isMapped(code: string): boolean {
-  return FIGHT_KEYS.some((map) => code in map) || MENU_KEYS.some((map) => code in map);
 }
 
 function isTyping(e: KeyboardEvent): boolean {
