@@ -414,7 +414,7 @@ def build_head(look, spine, t, ext):
     snout = "snout" in ext
     empty("mouth", head, hp(0.348, 0.085, 0) if snout else hp(0.248, 0.115, 0))
 
-    build_hair(look, head, hp, (kx, ky, kz))
+    build_hair(look, head, hp, (kx, ky, kz), ext)
     build_headwear(look, head, ext, hp, (kx, ky, kz))
 
     stars = empty("prop:stars", head, hp(0, 0.62, 0))
@@ -424,7 +424,7 @@ def build_head(look, spine, t, ext):
     cone("prop:horn", 0.08, 0.0, 0.35, head, hp(0.3, 0.3, 0), 0xE8E0C8, rot=(0, 0, -1.2))
 
 
-def build_hair(look, head, hp, k):
+def build_hair(look, head, hp, k, ext):
     hair = look["hair"]
     style = look["hairStyle"]
 
@@ -440,6 +440,8 @@ def build_hair(look, head, hp, k):
             cone(f"spike{i}", 0.09, 0.0, 0.26, head, hp(x, y, z), hair, rot=(rx, 0, rz), segs=4, smooth=False)
     elif style == "messy":
         cap(0.262, hair)
+        if {"potHelmet", "cap"} & ext:
+            return  # chapéu por cima: só a franja do gorro aparece
         # Franja em mechas grossas e pontudas (forma gráfica, não fio a fio).
         for i, (x, y, z, r, rx) in enumerate(
             [(0.17, 0.4, 0.1, -1.3, 0.3), (0.19, 0.39, -0.03, -1.4, 0), (0.15, 0.4, -0.14, -1.2, -0.4),
@@ -465,8 +467,9 @@ def build_headwear(look, head, ext, hp, k):
         ring("potRim", 0.27 * k[2], 0.02, head, hp(-0.01, 0.3, 0), 0x9AA2AA)
         box("potHandle", 0.3, 0.05, 0.07, head, hp(-0.3, 0.42, 0), 0x3A3A3A, rot=(0, 0, 0.15), bevel=0.015)
     if "cap" in ext:
-        hemisphere("capDome", 0.255, head, hp(-0.01, 0.27, 0), look["accent"], scale=k)
-        box("capBrim", 0.22, 0.035, 0.32 * k[2], head, hp(0.23, 0.29, 0), look["accent"], bevel=0.012)
+        # Boné alto o bastante para não esconder os olhos desenhados.
+        hemisphere("capDome", 0.255, head, hp(-0.01, 0.31, 0), look["accent"], scale=k)
+        box("capBrim", 0.22, 0.035, 0.32 * k[2], head, hp(0.23, 0.36, 0), look["accent"], rot=(0, 0, 0.12), bevel=0.012)
     if "snout" in ext:
         box("snout", 0.22, 0.18, 0.26 * k[2], head, hp(0.24, 0.13, 0), skin, bevel=0.06)
         box("noseTip", 0.05, 0.06, 0.18 * k[2], head, hp(0.35, 0.17, 0), 0x2A1A10, bevel=0.02)
