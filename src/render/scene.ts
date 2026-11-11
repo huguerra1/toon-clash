@@ -238,6 +238,8 @@ export class GameRenderer {
     this.cameraRig.add(this.camera);
     this.scene.add(this.cameraRig);
     this.camera.position.set(0, 2.2, CAMERA_MIN_DISTANCE);
+    // Efeitos são transparentes e brilhantes: não ganham traço de nanquim.
+    this.effects.group.userData.noInk = true;
     this.scene.add(this.effects.group);
     this.addLights();
     this.post = new PostProcessing(this.renderer, this.scene, this.camera);
@@ -601,7 +603,8 @@ export class GameRenderer {
   }
 
   private addLights(): void {
-    this.scene.add(new THREE.HemisphereLight(0xdfe8ff, 0x4a3a66, 1.4));
+    // Luz ambiente chapada (a luz de céu/chão fazia um degradê suave que parecia 3D renderizado).
+    this.scene.add(new THREE.AmbientLight(0xc4c0e0, 1.3));
     const sun = new THREE.DirectionalLight(0xffffff, 2.4);
     sun.position.set(4, 9, 7);
     sun.castShadow = true;
@@ -612,10 +615,6 @@ export class GameRenderer {
     sun.shadow.camera.bottom = -3;
     sun.shadow.bias = -0.0005;
     this.scene.add(sun);
-    // Luz de contorno vinda de trás para destacar os lutadores do fundo.
-    const rim = new THREE.DirectionalLight(0xb48cff, 0.8);
-    rim.position.set(-3, 4, -6);
-    this.scene.add(rim);
   }
 
   resize(): void {

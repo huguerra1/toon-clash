@@ -14,7 +14,7 @@ import {
 } from './face-sheet';
 import { mouthTexture } from './face-textures';
 import { type BoundRig, DANGLE_PREFIX, PROP_PREFIX, bindRig } from './rig';
-import { addExtrudedOutline, addOutline } from './toon-material';
+import { addExtrudedOutline, addOutline, getGradientMap } from './toon-material';
 
 export const JOINTS = [
   'spine',
@@ -76,15 +76,6 @@ interface Dangler {
   /** Quanto a parte reage ao movimento do corpo. */
   gain: number;
 }
-
-const gradient = (() => {
-  const tones = new Uint8Array([90, 170, 255]);
-  const texture = new THREE.DataTexture(tones, tones.length, 1, THREE.RedFormat);
-  texture.minFilter = THREE.NearestFilter;
-  texture.magFilter = THREE.NearestFilter;
-  texture.needsUpdate = true;
-  return texture;
-})();
 
 /** Modelo low-poly montado com primitivas, com "esqueleto" de grupos para animar. */
 export class FighterModel {
@@ -454,7 +445,7 @@ export class FighterModel {
   // -------------------------------------------------------------------------
 
   private material(color: number, glow = false): THREE.MeshToonMaterial {
-    const m = new THREE.MeshToonMaterial({ color, gradientMap: gradient });
+    const m = new THREE.MeshToonMaterial({ color, gradientMap: getGradientMap() });
     if (this.look.translucent) {
       m.transparent = true;
       m.opacity = 0.78;

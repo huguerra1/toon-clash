@@ -2,10 +2,13 @@ import * as THREE from 'three';
 
 let gradientMap: THREE.DataTexture | undefined;
 
-/** Textura de 3 tons usada pelo MeshToonMaterial: sombra, meio-tom e luz, sem degradê. */
-function getGradientMap(): THREE.DataTexture {
+/**
+ * Textura de 2 tons usada pelo MeshToonMaterial: luz e sombra chapadas, como no desenho de TV
+ * pintado a mão (sem o meio-tom que deixa o volume com cara de 3D renderizado).
+ */
+export function getGradientMap(): THREE.DataTexture {
   if (!gradientMap) {
-    const tones = new Uint8Array([90, 170, 255]);
+    const tones = new Uint8Array([150, 255]);
     gradientMap = new THREE.DataTexture(tones, tones.length, 1, THREE.RedFormat);
     gradientMap.minFilter = THREE.NearestFilter;
     gradientMap.magFilter = THREE.NearestFilter;
@@ -18,7 +21,7 @@ export function createToonMaterial(color: THREE.ColorRepresentation): THREE.Mesh
   return new THREE.MeshToonMaterial({ color, gradientMap: getGradientMap() });
 }
 
-const outlineMaterial = new THREE.MeshBasicMaterial({ color: 0x111111, side: THREE.BackSide });
+const outlineMaterial = new THREE.MeshBasicMaterial({ color: 0x15101c, side: THREE.BackSide });
 
 /**
  * Contorno preto estilo desenho animado (técnica "inverted hull"):
