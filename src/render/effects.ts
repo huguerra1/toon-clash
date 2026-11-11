@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import type { Projectile } from '../game/match';
 import { addOutline, createToonMaterial, disposeObject } from './toon-material';
+import { CPU_CANVAS } from './canvas';
 
 interface Particle {
   object: THREE.Object3D;
@@ -171,7 +172,7 @@ export class Effects {
     const canvas = document.createElement('canvas');
     canvas.width = 256;
     canvas.height = 128;
-    const ctx = canvas.getContext('2d')!;
+    const ctx = canvas.getContext('2d', CPU_CANVAS)!;
     ctx.translate(128, 64);
     ctx.rotate(-0.12);
     // Estrela de explosão atrás do texto

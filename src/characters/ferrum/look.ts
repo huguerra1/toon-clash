@@ -11,6 +11,8 @@ export const ferrumLook: CharacterLook = {
   hairStyle: 'bald',
   scale: 1.12,
   bulk: 1.35,
+  body: 'block',
+  headShape: 'flat',
   extras: ['cannonArm', 'visor', 'shoulderPads', 'armor', 'cap'],
   emblem: 'shield',
   personality: 'brute',

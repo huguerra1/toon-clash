@@ -29,7 +29,12 @@ import { QUALITY_LABELS, QUALITY_OPTIONS, defaultQualityLevel } from './render/q
 import type { GameRenderer } from './render/scene';
 import { STAGES, type StageId } from './render/stages';
 import { Hud } from './ui/hud';
-import { FLASH_OPTIONS, SCREEN_SHAKE_OPTIONS, cycleOption } from './ui/accessibility';
+import {
+  ANIMATION_OPTIONS,
+  FLASH_OPTIONS,
+  SCREEN_SHAKE_OPTIONS,
+  cycleOption,
+} from './ui/accessibility';
 import { Menu, type MenuItem } from './ui/menu';
 import { PerfMeter } from './ui/perf-meter';
 import { fighterPortrait } from './render/portraits';
@@ -1030,6 +1035,11 @@ export class App {
         ...a11y(),
         flashes: cycleOption(FLASH_OPTIONS, a11y().flashes, step),
       });
+    const setAnimation = (step: 1 | -1) =>
+      this.renderer.setAccessibility({
+        ...a11y(),
+        animation: cycleOption(ANIMATION_OPTIONS, a11y().animation, step),
+      });
     const items: MenuItem[] = [
       {
         label: () => `Volume: ${Math.round(this.audio.volume * 100)}%`,
@@ -1057,6 +1067,12 @@ export class App {
         action: () => setFlashes(1),
         left: () => setFlashes(-1),
         right: () => setFlashes(1),
+      },
+      {
+        label: () => `Animação: ${a11y().animation}`,
+        action: () => setAnimation(1),
+        left: () => setAnimation(-1),
+        right: () => setAnimation(1),
       },
       {
         label: () => `Mostrar desempenho: ${this.perf.shown ? 'sim' : 'não'}`,

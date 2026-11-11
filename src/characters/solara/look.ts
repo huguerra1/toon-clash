@@ -11,6 +11,8 @@ export const solaraLook: CharacterLook = {
   hairStyle: 'crest',
   scale: 1.02,
   bulk: 0.9,
+  body: 'slim',
+  headShape: 'tall',
   extras: ['glowEyes', 'glowHands', 'belt'],
   emblem: 'star',
   personality: 'royal',

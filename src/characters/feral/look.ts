@@ -11,6 +11,8 @@ export const feralLook: CharacterLook = {
   hairStyle: 'spiky',
   scale: 0.92,
   bulk: 0.95,
+  body: 'wedge',
+  headShape: 'wide',
   extras: ['ears', 'belt'],
   emblem: 'leaf',
   personality: 'wild',

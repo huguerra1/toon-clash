@@ -21,13 +21,10 @@ class PortraitStudio {
   private readonly cache = new Map<CharacterId, string>();
 
   constructor() {
-    this.scene.add(new THREE.HemisphereLight(0xffffff, 0x6a5a8a, 1.6));
+    this.scene.add(new THREE.AmbientLight(0xd8d4f0, 1.4));
     const key = new THREE.DirectionalLight(0xffffff, 2.6);
     key.position.set(3, 4, 5);
     this.scene.add(key);
-    const rim = new THREE.DirectionalLight(0xb48cff, 1.2);
-    rim.position.set(-3, 2, -4);
-    this.scene.add(rim);
   }
 
   portrait(id: CharacterId): string {

@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { ARENA_HALF_WIDTH } from '../combat/constants';
 import { addOutline, createToonMaterial } from './toon-material';
+import { CPU_CANVAS } from './canvas';
 
 export type StageId = 'rooftop' | 'forest' | 'base' | 'ship' | 'park' | 'sweets';
 
@@ -30,7 +31,7 @@ function gradientTexture(top: string, bottom: string): THREE.CanvasTexture {
   const canvas = document.createElement('canvas');
   canvas.width = 4;
   canvas.height = 256;
-  const ctx = canvas.getContext('2d')!;
+  const ctx = canvas.getContext('2d', CPU_CANVAS)!;
   const g = ctx.createLinearGradient(0, 0, 0, 256);
   g.addColorStop(0, top);
   g.addColorStop(1, bottom);
@@ -175,7 +176,7 @@ function windowTexture(): THREE.CanvasTexture {
   const canvas = document.createElement('canvas');
   canvas.width = 64;
   canvas.height = 128;
-  const ctx = canvas.getContext('2d')!;
+  const ctx = canvas.getContext('2d', CPU_CANVAS)!;
   ctx.fillStyle = '#1b1438';
   ctx.fillRect(0, 0, 64, 128);
   for (let y = 6; y < 128; y += 14) {
@@ -417,7 +418,7 @@ function stripesTexture(): THREE.CanvasTexture {
   const canvas = document.createElement('canvas');
   canvas.width = 64;
   canvas.height = 64;
-  const ctx = canvas.getContext('2d')!;
+  const ctx = canvas.getContext('2d', CPU_CANVAS)!;
   ctx.fillStyle = '#222';
   ctx.fillRect(0, 0, 64, 64);
   ctx.fillStyle = '#ffcc00';
@@ -859,7 +860,7 @@ function buildPark(): BuiltStage {
 
   const canvas = document.createElement('canvas');
   canvas.width = canvas.height = 64;
-  const ctx = canvas.getContext('2d')!;
+  const ctx = canvas.getContext('2d', CPU_CANVAS)!;
   for (let x = 0; x < 64; x += 8) {
     ctx.fillStyle = x % 16 === 0 ? '#f5dfb9' : '#bb4f78';
     ctx.fillRect(x, 0, 8, 64);
