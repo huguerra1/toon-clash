@@ -1,5 +1,19 @@
 import { describe, expect, it } from 'vitest';
-import { cleanGpuName } from './scene';
+import { cleanGpuName, isSoftwareRenderer } from './scene';
+
+describe('isSoftwareRenderer', () => {
+  it('reconhece quando o navegador desenha sem a placa de vídeo', () => {
+    expect(isSoftwareRenderer('Microsoft Basic Render Driver')).toBe(true);
+    expect(isSoftwareRenderer('Google SwiftShader')).toBe(true);
+    expect(isSoftwareRenderer('llvmpipe (LLVM 15.0.7, 256 bits)')).toBe(true);
+  });
+
+  it('não confunde placas de verdade', () => {
+    expect(isSoftwareRenderer('NVIDIA GeForce RTX 3050')).toBe(false);
+    expect(isSoftwareRenderer('Intel(R) UHD Graphics 620')).toBe(false);
+    expect(isSoftwareRenderer('Apple M2')).toBe(false);
+  });
+});
 
 describe('cleanGpuName', () => {
   it('tira os detalhes do ANGLE e deixa só o nome da placa', () => {

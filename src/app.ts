@@ -81,6 +81,7 @@ interface Session {
 export const AUTHOR = 'Hugo Mourao';
 
 const UNLOCK_KEY = 'toon-clash:zhaar-liberado';
+const GPU_WARNING_KEY = 'toon-clash:aviso-gpu';
 const RESULTS_DELAY = 200;
 
 function readUnlock(): boolean {
@@ -141,6 +142,7 @@ export class App {
     this.adaptiveQuality = new AdaptiveQuality(renderer.effectiveQuality);
     root.appendChild(this.hud.el);
     root.appendChild(html('div', 'signature', `Criado por <b>${AUTHOR}</b>`));
+    if (renderer.softwareRendering) this.showGpuWarning(root);
     this.match = this.showcase(['kai', 'solara'], 'rooftop');
     this.show(this.titleScreen());
   }
@@ -192,11 +194,48 @@ export class App {
   }
 
   /**
+   * Aviso para quando o navegador desenha sem a placa de vídeo (fica a ~10–15 FPS).
+   * Aparece nos menus até o jogador fechar; volta na próxima vez que abrir o navegador.
+   */
+  private showGpuWarning(root: HTMLElement): void {
+    try {
+      if (sessionStorage.getItem(GPU_WARNING_KEY) === 'fechado') return;
+    } catch {
+      // Sem armazenamento: mostra o aviso mesmo assim.
+    }
+    const el = html(
+      'div',
+      'gpu-warning panel',
+      `<h3>O jogo está sem aceleração de vídeo</h3>
+       <p>Seu navegador está desenhando o jogo sem a placa de vídeo (${this.renderer.gpuName}), por
+       isso fica lento. Deixamos os gráficos no mínimo, mas o certo é ligar a aceleração:</p>
+       <ol>
+         <li>Abra as configurações do navegador → <b>Sistema</b>
+           (<code>chrome://settings/system</code> ou <code>edge://settings/system</code>).</li>
+         <li>Ligue <b>“Usar aceleração de gráficos quando disponível”</b> e clique em <b>Reiniciar</b>.</li>
+         <li>Se já estava ligado, feche o navegador por completo e abra de novo, ou atualize o
+           driver da placa de vídeo.</li>
+       </ol>
+       <button class="btn">Entendi</button>`,
+    );
+    el.querySelector('button')!.addEventListener('click', () => {
+      el.remove();
+      try {
+        sessionStorage.setItem(GPU_WARNING_KEY, 'fechado');
+      } catch {
+        // Ignora: só volta a aparecer ao recarregar.
+      }
+    });
+    root.appendChild(el);
+  }
+
+  /**
    * Desenha um quadro. `now` é o horário do quadro em ms (para o contador de desempenho) e
    * `alpha` a fração do tempo entre o último tick e o próximo (para interpolar o movimento).
    */
   render(dt: number, now: number, alpha = 1): void {
-    if (this.renderer.quality === 'auto') {
+    // Sem placa de vídeo a qualidade já fica travada em 'baixo': o automático não tenta subir.
+    if (this.renderer.quality === 'auto' && !this.renderer.softwareRendering) {
       const level = this.adaptiveQuality.frame(now);
       if (level !== this.renderer.effectiveQuality) {
         this.renderer.setQuality(level);

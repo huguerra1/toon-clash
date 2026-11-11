@@ -1086,3 +1086,46 @@ h2 {
 .fighting > .signature {
   display: none;
 }
+
+/* ---------- Aviso de navegador sem aceleração de vídeo ---------- */
+
+#ui > .gpu-warning {
+  position: absolute;
+  left: 50%;
+  bottom: 44px;
+  transform: translateX(-50%);
+  width: min(560px, calc(100% - 32px));
+  padding: 14px 18px;
+  font-size: 0.9rem;
+  z-index: 20;
+  border-color: #ff7a1a;
+}
+
+.gpu-warning h3 {
+  font-size: 1.4rem;
+  margin: 0 0 6px;
+  color: #ffb13d;
+}
+
+.gpu-warning p,
+.gpu-warning ol {
+  margin: 4px 0;
+}
+
+.gpu-warning ol {
+  padding-left: 20px;
+}
+
+.gpu-warning code {
+  font-size: 0.8rem;
+  user-select: text;
+}
+
+.gpu-warning .btn {
+  margin-top: 8px;
+}
+
+/* Durante a luta o aviso sai da frente. */
+.fighting > .gpu-warning {
+  display: none;
+}
