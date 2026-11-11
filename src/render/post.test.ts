@@ -39,7 +39,7 @@ describe('pós-processamento', () => {
     post.render();
     post.render();
     expect(render).toHaveBeenCalledTimes(2);
-    expect(addPass).toHaveBeenCalledTimes(3);
+    expect(addPass).toHaveBeenCalledTimes(4);
     expect(renderer.render).not.toHaveBeenCalled();
     post.enabled = false;
     post.render();

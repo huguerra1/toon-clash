@@ -6,6 +6,7 @@ import {
   cycleOption,
   defaultAccessibility,
   flashScale,
+  poseHold,
   loadAccessibility,
   saveAccessibility,
   shakeScale,
@@ -41,44 +42,85 @@ describe('acessibilidade', () => {
   });
 
   it('usa tremor e flashes normais por padrão', () => {
-    expect(defaultAccessibility()).toEqual({ screenShake: 'normal', flashes: 'normal' });
-    expect(loadAccessibility()).toEqual({ screenShake: 'normal', flashes: 'normal' });
+    expect(defaultAccessibility()).toEqual({
+      screenShake: 'normal',
+      flashes: 'normal',
+      animation: 'suave',
+    });
+    expect(loadAccessibility()).toEqual({
+      screenShake: 'normal',
+      flashes: 'normal',
+      animation: 'suave',
+    });
   });
 
   it('salva e lê as preferências na chave do jogo', () => {
     const storage = memoryStorage();
     vi.stubGlobal('localStorage', storage);
-    saveAccessibility({ screenShake: 'desligado', flashes: 'reduzidos' });
+    saveAccessibility({ screenShake: 'desligado', flashes: 'reduzidos', animation: 'desenho' });
     expect(JSON.parse(storage.values.get(ACCESSIBILITY_KEY)!)).toEqual({
       screenShake: 'desligado',
       flashes: 'reduzidos',
+      animation: 'desenho',
     });
-    expect(loadAccessibility()).toEqual({ screenShake: 'desligado', flashes: 'reduzidos' });
+    expect(loadAccessibility()).toEqual({
+      screenShake: 'desligado',
+      flashes: 'reduzidos',
+      animation: 'desenho',
+    });
   });
 
   it('volta ao padrão com JSON inválido ou valores desconhecidos', () => {
     vi.stubGlobal('localStorage', memoryStorage({ [ACCESSIBILITY_KEY]: '{quebrado' }));
-    expect(loadAccessibility()).toEqual({ screenShake: 'normal', flashes: 'normal' });
+    expect(loadAccessibility()).toEqual({
+      screenShake: 'normal',
+      flashes: 'normal',
+      animation: 'suave',
+    });
 
     vi.stubGlobal('localStorage', memoryStorage({ [ACCESSIBILITY_KEY]: 'null' }));
-    expect(loadAccessibility()).toEqual({ screenShake: 'normal', flashes: 'normal' });
+    expect(loadAccessibility()).toEqual({
+      screenShake: 'normal',
+      flashes: 'normal',
+      animation: 'suave',
+    });
 
-    const partial = JSON.stringify({ screenShake: 'tremendo', flashes: 'reduzidos' });
+    const partial = JSON.stringify({
+      screenShake: 'tremendo',
+      flashes: 'reduzidos',
+      animation: 'suave',
+    });
     vi.stubGlobal('localStorage', memoryStorage({ [ACCESSIBILITY_KEY]: partial }));
-    expect(loadAccessibility()).toEqual({ screenShake: 'normal', flashes: 'reduzidos' });
+    expect(loadAccessibility()).toEqual({
+      screenShake: 'normal',
+      flashes: 'reduzidos',
+      animation: 'suave',
+    });
   });
 
   it('funciona sem localStorage ou com armazenamento bloqueado', () => {
     vi.stubGlobal('localStorage', undefined);
-    expect(loadAccessibility()).toEqual({ screenShake: 'normal', flashes: 'normal' });
-    expect(() => saveAccessibility({ screenShake: 'reduzido', flashes: 'normal' })).not.toThrow();
+    expect(loadAccessibility()).toEqual({
+      screenShake: 'normal',
+      flashes: 'normal',
+      animation: 'suave',
+    });
+    expect(() =>
+      saveAccessibility({ screenShake: 'reduzido', flashes: 'normal', animation: 'suave' }),
+    ).not.toThrow();
 
     const fail = () => {
       throw new Error('Sem permissão');
     };
     vi.stubGlobal('localStorage', { getItem: fail, setItem: fail });
-    expect(loadAccessibility()).toEqual({ screenShake: 'normal', flashes: 'normal' });
-    expect(() => saveAccessibility({ screenShake: 'reduzido', flashes: 'normal' })).not.toThrow();
+    expect(loadAccessibility()).toEqual({
+      screenShake: 'normal',
+      flashes: 'normal',
+      animation: 'suave',
+    });
+    expect(() =>
+      saveAccessibility({ screenShake: 'reduzido', flashes: 'normal', animation: 'suave' }),
+    ).not.toThrow();
   });
 
   it('converte as preferências em multiplicadores', () => {
@@ -98,13 +140,17 @@ describe('acessibilidade', () => {
 
   it('com prefers-reduced-motion o tremor padrão é reduzido', () => {
     const matchMedia = stubReducedMotion(true);
-    expect(loadAccessibility()).toEqual({ screenShake: 'reduzido', flashes: 'normal' });
+    expect(loadAccessibility()).toEqual({
+      screenShake: 'reduzido',
+      flashes: 'normal',
+      animation: 'suave',
+    });
     expect(matchMedia).toHaveBeenCalledWith('(prefers-reduced-motion: reduce)');
   });
 
   it('a preferência salva vence o prefers-reduced-motion', () => {
     stubReducedMotion(true);
-    const saved = JSON.stringify({ screenShake: 'normal', flashes: 'normal' });
+    const saved = JSON.stringify({ screenShake: 'normal', flashes: 'normal', animation: 'suave' });
     vi.stubGlobal('localStorage', memoryStorage({ [ACCESSIBILITY_KEY]: saved }));
     expect(loadAccessibility().screenShake).toBe('normal');
   });
@@ -114,5 +160,10 @@ describe('acessibilidade', () => {
       throw new Error('Sem suporte');
     });
     expect(defaultAccessibility().screenShake).toBe('normal');
+  });
+
+  it('o estilo desenho segura a pose por 1/15 s e o suave não segura', () => {
+    expect(poseHold('suave')).toBe(0);
+    expect(poseHold('desenho')).toBeCloseTo(1 / 15);
   });
 });

@@ -19,6 +19,7 @@ import {
 import {
   type AccessibilityPrefs,
   flashScale,
+  poseHold,
   loadAccessibility,
   saveAccessibility,
   shakeScale,
@@ -193,6 +194,17 @@ function stretchFor(f: FighterState, move: MoveDef | null): number {
   }
 }
 
+/**
+ * Chave da pose para a animação em estilo desenho: quando muda (outro estado, outro golpe,
+ * passagem de preparação → golpe ativo → recuperação), a pose nova aparece na hora.
+ */
+export function poseKey(f: FighterState, move: MoveDef | null): string {
+  // Primeiro tick do estado (ex.: apanhar de novo reinicia o hitstun) também troca na hora.
+  if (!move) return f.stateTick === 0 ? `${f.state}:0` : f.state;
+  const phase = f.stateTick < move.startup ? 0 : f.stateTick < move.startup + move.active ? 1 : 2;
+  return `${f.state}:${move.name}:${phase}`;
+}
+
 /** Desenha a partida. Não contém regra de jogo: só lê o MatchState e reage aos eventos. */
 export class GameRenderer {
   readonly renderer: THREE.WebGLRenderer;
@@ -238,6 +250,8 @@ export class GameRenderer {
     this.cameraRig.add(this.camera);
     this.scene.add(this.cameraRig);
     this.camera.position.set(0, 2.2, CAMERA_MIN_DISTANCE);
+    // Efeitos são transparentes e brilhantes: não ganham traço de nanquim.
+    this.effects.group.userData.noInk = true;
     this.scene.add(this.effects.group);
     this.addLights();
     this.post = new PostProcessing(this.renderer, this.scene, this.camera);
@@ -290,6 +304,7 @@ export class GameRenderer {
     return LOOKS[id].map((_, form) => {
       const model = new FighterModel(getLook(id, form), getFighterSource(id, form));
       model.flashScale = flashScale(this.accessibility.flashes);
+      model.poseHold = poseHold(this.accessibility.animation);
       this.scene.add(model.root);
       return model;
     });
@@ -386,6 +401,9 @@ export class GameRenderer {
       const def = getCharacter(f.character);
       const models = this.models[index];
       const model = this.activeModel(match, index);
+      // Troca de forma: a forma nova entra no lugar, virada e na pose da anterior.
+      const shown = models.find((m) => m.root.visible && m !== model);
+      if (model && shown && !model.root.visible) model.takeOver(shown);
       for (const m of models) m.root.visible = m === model;
       if (!model) return;
 
@@ -410,9 +428,9 @@ export class GameRenderer {
         this.walkPhase[index],
         this.reactions[index],
       );
-      model.applyPose(pose, rate, dt);
-
       const move = currentMove(f, def);
+      model.applyPose(pose, rate, dt, poseKey(state, move));
+
       model.setExpression(expressionFor(state, move?.special === true, model.look.personality));
       model.setStretch(stretchFor(state, move), dt);
       const visualProp = move?.visual ? VISUAL_PROPS[move.visual] : undefined;
@@ -493,7 +511,11 @@ export class GameRenderer {
     this.accessibility = { ...prefs };
     saveAccessibility(this.accessibility);
     const scale = flashScale(this.accessibility.flashes);
-    for (const m of this.models.flat()) m.flashScale = scale;
+    const hold = poseHold(this.accessibility.animation);
+    for (const m of this.models.flat()) {
+      m.flashScale = scale;
+      m.poseHold = hold;
+    }
   }
 
   private activeModel(match: MatchState, i: 0 | 1): FighterModel | undefined {
@@ -601,7 +623,8 @@ export class GameRenderer {
   }
 
   private addLights(): void {
-    this.scene.add(new THREE.HemisphereLight(0xdfe8ff, 0x4a3a66, 1.4));
+    // Luz ambiente chapada (a luz de céu/chão fazia um degradê suave que parecia 3D renderizado).
+    this.scene.add(new THREE.AmbientLight(0xc4c0e0, 1.3));
     const sun = new THREE.DirectionalLight(0xffffff, 2.4);
     sun.position.set(4, 9, 7);
     sun.castShadow = true;
@@ -612,10 +635,6 @@ export class GameRenderer {
     sun.shadow.camera.bottom = -3;
     sun.shadow.bias = -0.0005;
     this.scene.add(sun);
-    // Luz de contorno vinda de trás para destacar os lutadores do fundo.
-    const rim = new THREE.DirectionalLight(0xb48cff, 0.8);
-    rim.position.set(-3, 4, -6);
-    this.scene.add(rim);
   }
 
   resize(): void {
