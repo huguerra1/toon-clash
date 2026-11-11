@@ -11,6 +11,7 @@ export const gelatinoLook: CharacterLook = {
   hairStyle: 'bald',
   scale: 1.02,
   bulk: 1.25,
+  face: 'dot',
   extras: [],
   personality: 'goofy',
   proportions: { head: 1.1, legs: 0.8, arms: 1.1, torso: 0.95 },

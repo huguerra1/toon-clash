@@ -11,6 +11,7 @@ export const pipocaLook: CharacterLook = {
   hairStyle: 'messy',
   scale: 0.9,
   bulk: 0.95,
+  face: 'dot',
   extras: ['potHelmet', 'scarf', 'belt'],
   emblem: 'crown',
   personality: 'knight',

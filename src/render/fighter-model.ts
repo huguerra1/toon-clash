@@ -2,7 +2,17 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import type { CharacterLook } from '../characters/look';
 import { emblemTexture } from './emblems';
-import { type MouthShape, mouthTexture } from './face-textures';
+import {
+  type FaceOptions,
+  FACE_CENTER,
+  FACE_RADIUS,
+  MOUTH_FOR,
+  canBlink,
+  createFacePlate,
+  faceOptionsOf,
+  faceTexture,
+} from './face-sheet';
+import { mouthTexture } from './face-textures';
 import { type BoundRig, DANGLE_PREFIX, PROP_PREFIX, bindRig } from './rig';
 import { addExtrudedOutline, addOutline } from './toon-material';
 
@@ -57,21 +67,6 @@ const SHIN = 0.4;
 export type Expression =
   'neutral' | 'angry' | 'shout' | 'pain' | 'happy' | 'dizzy' | 'sleepy' | 'ko';
 
-/** lid: abertura dos olhos (0..1); brow: inclinação (positivo = bravo); browY: altura extra. */
-const EXPRESSIONS: Record<
-  Expression,
-  { lid: number; brow: number; browY: number; mouth: MouthShape }
-> = {
-  neutral: { lid: 1, brow: 0.15, browY: 0, mouth: 'neutral' },
-  angry: { lid: 0.72, brow: 0.55, browY: -0.012, mouth: 'grin' },
-  shout: { lid: 1, brow: 0.45, browY: 0.01, mouth: 'shout' },
-  pain: { lid: 0.3, brow: -0.45, browY: 0.02, mouth: 'pain' },
-  happy: { lid: 0.75, brow: -0.25, browY: 0.025, mouth: 'smile' },
-  dizzy: { lid: 0.6, brow: -0.3, browY: 0, mouth: 'wavy' },
-  sleepy: { lid: 0.35, brow: -0.1, browY: -0.006, mouth: 'sleepy' },
-  ko: { lid: 0, brow: -0.4, browY: 0, mouth: 'pain' },
-};
-
 /** Parte que balança com mola (capa, cabelo, cachecol, orelhas). */
 interface Dangler {
   pivot: THREE.Object3D;
@@ -110,9 +105,12 @@ export class FighterModel {
   hipHeight: number;
   private readonly thigh: number;
   private readonly shin: number;
-  private readonly eyes: { pupil: THREE.Object3D | null; lid: THREE.Object3D }[] = [];
-  private readonly brows: { mesh: THREE.Object3D; side: 1 | -1; y: number }[] = [];
+  /** Rosto desenhado (olhos, sobrancelhas e boca) num pedaço de esfera na frente da cabeça. */
+  private face: THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial> | null = null;
+  private readonly faceOptions: FaceOptions;
+  /** Boca separada, na frente do focinho (só quem tem focinho). */
   private mouth: THREE.Mesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial> | null = null;
+  private blinking = false;
   private expression: Expression = 'neutral';
   private readonly danglers: Dangler[] = [];
   private lastX: number | null = null;
@@ -130,6 +128,7 @@ export class FighterModel {
     readonly look: CharacterLook,
     source?: THREE.Object3D,
   ) {
+    this.faceOptions = faceOptionsOf(look);
     const legs = look.proportions?.legs ?? 1;
     this.thigh = THIGH * legs;
     this.shin = SHIN * legs;
@@ -151,7 +150,7 @@ export class FighterModel {
     }
     this.mergeStatic();
     this.root.traverse((o) => {
-      if (o instanceof THREE.Mesh && !o.userData.outline) o.castShadow = true;
+      if (o instanceof THREE.Mesh && !o.userData.outline && o !== this.face) o.castShadow = true;
     });
   }
 
@@ -164,8 +163,7 @@ export class FighterModel {
   private mergeStatic(): void {
     const keep = new Set<THREE.Object3D>();
     for (const objects of this.props.values()) for (const o of objects) keep.add(o);
-    for (const eye of this.eyes) keep.add(eye.lid);
-    for (const brow of this.brows) keep.add(brow.mesh);
+    if (this.face) keep.add(this.face);
     if (this.mouth) keep.add(this.mouth);
 
     const nodes: THREE.Object3D[] = [];
@@ -244,19 +242,43 @@ export class FighterModel {
       const rest = pivot.rotation.z;
       this.danglers.push({ pivot, rest, angle: rest, velocity: 0, gain: 1 });
     }
-    this.eyes.push(...rig.eyes);
     this.hands.push(...rig.hands);
     this.addEmblem(rig.joints.spine);
-    for (const brow of rig.brows) {
-      this.brows.push({ mesh: brow, side: brow.position.z >= 0 ? 1 : -1, y: brow.position.y });
-    }
-    if (rig.mouth) {
+    // Olhos e sobrancelhas 3D de modelos antigos saem: o rosto agora é desenhado.
+    for (const eye of rig.eyes) eye.lid.parent?.removeFromParent();
+    for (const brow of rig.brows) brow.removeFromParent();
+    // O nó 'face' (opcional) marca o centro da cabeça; a escala dele é o raio.
+    const anchor = rig.face;
+    this.attachFace(
+      anchor?.parent ?? rig.joints.head,
+      anchor ? anchor.position : FACE_CENTER,
+      anchor ? anchor.scale.x : FACE_RADIUS,
+      rig.mouth,
+    );
+  }
+
+  /** Cola o rosto desenhado na cabeça (e a boca no focinho, se houver). */
+  private attachFace(
+    head: THREE.Object3D,
+    center: THREE.Vector3,
+    radius: number,
+    mouthAt: THREE.Object3D | null,
+  ): void {
+    this.face = createFacePlate(center, radius);
+    head.add(this.face);
+    if (!this.faceOptions.mouth) {
       const mouth = new THREE.Mesh(
         new THREE.PlaneGeometry(0.17, 0.085),
         new THREE.MeshBasicMaterial({ map: mouthTexture('neutral'), transparent: true }),
       );
       mouth.rotation.y = Math.PI / 2;
-      rig.mouth.add(mouth);
+      mouth.name = 'mouth';
+      if (mouthAt) mouthAt.add(mouth);
+      else {
+        mouth.position.set(0.348, 0.085, 0);
+        head.add(mouth);
+      }
+      mouth.userData.noInk = true;
       this.mouth = mouth;
     }
     this.expression = 'ko';
@@ -317,12 +339,16 @@ export class FighterModel {
   setExpression(expression: Expression): void {
     if (expression === this.expression) return;
     this.expression = expression;
-    const e = EXPRESSIONS[expression];
-    if (this.mouth) this.mouth.material.map = mouthTexture(e.mouth);
-    for (const brow of this.brows) {
-      brow.mesh.rotation.x = -brow.side * e.brow;
-      brow.mesh.position.y = brow.y + e.browY;
-    }
+    if (this.mouth) this.mouth.material.map = mouthTexture(MOUTH_FOR[expression]);
+    this.drawFace();
+  }
+
+  private drawFace(): void {
+    if (!this.face) return;
+    const material = this.face.material;
+    // Só recompila o material na primeira textura; depois é só trocar.
+    if (!material.map) material.needsUpdate = true;
+    material.map = faceTexture(this.expression, this.blinking, this.faceOptions);
   }
 
   /**
@@ -338,26 +364,16 @@ export class FighterModel {
   }
 
   private updateFace(dt: number): void {
-    const e = EXPRESSIONS[this.expression];
     this.blinkIn -= dt;
     if (this.blinkIn <= 0) {
       this.blinkFor = 0.12;
       this.blinkIn = 2 + Math.random() * 3.5;
     }
     this.blinkFor = Math.max(0, this.blinkFor - dt);
-    const open = this.blinkFor > 0 ? 0 : e.lid;
-    // Pálpebra = meia esfera girando na frente do olho: -90° fecha, +90° abre.
-    const angle = -Math.PI / 2 + open * Math.PI;
-    for (const eye of this.eyes) {
-      eye.lid.rotation.z += (angle - eye.lid.rotation.z) * Math.min(1, dt * 25);
-      if (!eye.pupil) continue;
-      if (this.expression === 'dizzy') {
-        eye.pupil.position.y = Math.sin(this.time * 8) * 0.025;
-        eye.pupil.position.z = Math.cos(this.time * 8) * 0.025;
-      } else {
-        eye.pupil.position.y = 0;
-        eye.pupil.position.z = 0;
-      }
+    const blinking = this.blinkFor > 0 && canBlink(this.expression);
+    if (blinking !== this.blinking) {
+      this.blinking = blinking;
+      this.drawFace();
     }
   }
 
@@ -538,7 +554,7 @@ export class FighterModel {
       outline: 0,
     });
     this.mesh(new THREE.SphereGeometry(0.24, 18, 14), look.skin, head, [0.02, 0.22, 0]);
-    this.buildFace(head, has('glowEyes'), has('visor'));
+    this.buildFace(head, has('visor'));
     this.buildHair(head);
     if (has('goggles')) {
       const band = this.mesh(
@@ -740,77 +756,15 @@ export class FighterModel {
     }
   }
 
-  /** Olhos com pálpebra e pupila, sobrancelhas e boca trocável (expressões). */
-  private buildFace(head: THREE.Group, glowEyes: boolean, visor: boolean): void {
-    const { look } = this;
-    const snout = look.extras.includes('snout');
+  /** Rosto desenhado; o visor de quem tem fica por cima, brilhando. */
+  private buildFace(head: THREE.Group, visor: boolean): void {
     if (visor) {
-      this.mesh(new THREE.BoxGeometry(0.06, 0.07, 0.3), look.accent, head, [0.23, 0.25, 0], {
+      this.mesh(new THREE.BoxGeometry(0.06, 0.07, 0.3), this.look.accent, head, [0.23, 0.25, 0], {
         glow: true,
         outline: 0.015,
       });
-    } else {
-      for (const side of [1, -1] as const) {
-        const z = side * 0.085;
-        const eye = this.group(head, [0.2, 0.25, z]);
-        eye.name = 'eye';
-        const radius = glowEyes ? 0.058 : 0.068;
-        this.mesh(
-          new THREE.SphereGeometry(radius, 14, 10),
-          glowEyes ? look.glow : 0xffffff,
-          eye,
-          [0, 0, 0],
-          {
-            glow: glowEyes,
-            outline: 0.012,
-          },
-        );
-        let pupil: THREE.Group | null = null;
-        if (!glowEyes) {
-          pupil = this.group(eye, [0, 0, 0]);
-          pupil.name = 'pupil';
-          this.mesh(new THREE.SphereGeometry(0.034, 10, 8), 0x111111, pupil, [0.052, 0, 0], {
-            outline: 0,
-          });
-          // Brilhinho no olho, típico de desenho animado.
-          this.mesh(new THREE.SphereGeometry(0.011, 6, 4), 0xffffff, pupil, [0.08, 0.016, 0.01], {
-            outline: 0,
-          });
-        }
-        // Pálpebra: meia esfera da cor da pele que gira para cobrir o olho.
-        const lid = this.mesh(
-          new THREE.SphereGeometry(radius * 1.12, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2),
-          look.skin,
-          eye,
-          [0, 0, 0],
-          { outline: 0 },
-        );
-        lid.rotation.z = Math.PI / 2;
-        lid.name = 'lid';
-        this.eyes.push({ pupil, lid });
-        const browY = 0.36;
-        const brow = this.mesh(new THREE.BoxGeometry(0.028, 0.03, 0.12), darker(look.hair), head, [
-          0.215,
-          browY,
-          z,
-        ]);
-        brow.rotation.order = 'ZXY';
-        brow.name = 'brow';
-        brow.rotation.z = -0.35;
-        this.brows.push({ mesh: brow, side, y: browY });
-      }
     }
-    const mouth = new THREE.Mesh(
-      new THREE.PlaneGeometry(0.17, 0.085),
-      new THREE.MeshBasicMaterial({ map: mouthTexture('neutral'), transparent: true }),
-    );
-    mouth.position.set(snout ? 0.348 : 0.248, snout ? 0.085 : 0.115, 0);
-    mouth.rotation.y = Math.PI / 2;
-    mouth.name = 'mouth';
-    head.add(mouth);
-    this.mouth = mouth;
-    this.expression = 'ko';
-    this.setExpression('neutral');
+    this.attachFace(head, FACE_CENTER, FACE_RADIUS, null);
   }
 
   /** Emblema do lutador no peito (desenhado em textura, por cima da roupa). */
@@ -1135,11 +1089,6 @@ function mergeColored(meshes: THREE.Mesh[]): THREE.BufferGeometry {
   for (const part of parts) part.dispose();
   if (!merged) throw new Error('Não foi possível juntar as peças do lutador.');
   return merged;
-}
-
-/** Cor um pouco mais escura (sobrancelhas). */
-function darker(color: number): number {
-  return new THREE.Color(color).multiplyScalar(0.6).getHex();
 }
 
 export function neutralPose(): Pose {

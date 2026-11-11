@@ -11,6 +11,7 @@ export const lolaLook: CharacterLook = {
   hairStyle: 'spiky',
   scale: 0.98,
   bulk: 0.9,
+  face: 'lashes',
   extras: ['headphones', 'boombox'],
   emblem: 'note',
   personality: 'dancer',

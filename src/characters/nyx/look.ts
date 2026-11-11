@@ -11,6 +11,7 @@ export const nyxLook: CharacterLook = {
   hairStyle: 'long',
   scale: 1,
   bulk: 1,
+  face: 'sharp',
   extras: ['gauntlets', 'stripe'],
   emblem: 'gear',
   personality: 'cool',

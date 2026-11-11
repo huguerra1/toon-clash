@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { CPU_CANVAS } from './canvas';
 
 export type MouthShape = 'neutral' | 'grin' | 'shout' | 'pain' | 'smile' | 'wavy' | 'sleepy';
 
@@ -12,7 +13,7 @@ export function mouthTexture(shape: MouthShape): THREE.CanvasTexture {
   const canvas = document.createElement('canvas');
   canvas.width = 128;
   canvas.height = 64;
-  const ctx = canvas.getContext('2d');
+  const ctx = canvas.getContext('2d', CPU_CANVAS);
   if (!ctx) throw new Error('Não foi possível criar a textura da boca.');
 
   ctx.strokeStyle = '#111111';

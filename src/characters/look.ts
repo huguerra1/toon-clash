@@ -50,7 +50,12 @@ export interface CharacterLook {
   emblem?: EmblemShape;
   /** Jeito de ficar em guarda e de comemorar. */
   personality?: Personality;
+  /** Desenho do rosto (padrão: 'visor' com visor, 'glow' com olhos brilhantes, senão 'round'). */
+  face?: FaceStyle;
 }
+
+/** Estilos de rosto desenhado: cada um conta algo da personalidade. */
+export type FaceStyle = 'round' | 'sharp' | 'dot' | 'glow' | 'visor' | 'sleepy' | 'lashes';
 
 export type EmblemShape =
   | 'bolt'

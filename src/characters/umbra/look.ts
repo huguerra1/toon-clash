@@ -11,6 +11,7 @@ export const umbraLook: CharacterLook = {
   hairStyle: 'hood',
   scale: 0.95,
   bulk: 0.9,
+  face: 'glow',
   extras: ['cape'],
   emblem: 'moon',
   personality: 'mystic',
