@@ -143,6 +143,22 @@ export class FighterModel {
     this.root.traverse((o) => {
       if (o instanceof THREE.Mesh && !o.userData.outline && o !== this.face) o.castShadow = true;
     });
+    if (look.translucent) this.hideInnerOutlines();
+  }
+
+  /**
+   * Corpo de gelatina: o contorno é uma casca escura por trás do corpo, e através do corpo
+   * semitransparente apareciam manchas dela. Desenhando o contorno depois do corpo (que grava
+   * profundidade), só sobra a borda de fora.
+   */
+  private hideInnerOutlines(): void {
+    let late: THREE.Material | null = null;
+    this.root.traverse((o) => {
+      if (!(o instanceof THREE.Mesh) || !o.userData.outline) return;
+      late ??= Object.assign((o.material as THREE.Material).clone(), { transparent: true });
+      o.material = late;
+      o.renderOrder = 2;
+    });
   }
 
   /**
@@ -224,7 +240,8 @@ export class FighterModel {
       const toon = this.material(old.color?.getHex() ?? 0xffffff, glow);
       if (old.map) toon.map = old.map;
       mesh.material = toon;
-      addOutline(mesh, 0.02);
+      // Contorno pela normal: acompanha formas torneadas fora do centro (tronco, membros).
+      addExtrudedOutline(mesh, 0.02);
     }
     for (const [name, objects] of rig.props) {
       for (const o of objects) this.addProp(name as PropName, o);
@@ -234,16 +251,17 @@ export class FighterModel {
       this.danglers.push({ pivot, rest, angle: rest, velocity: 0, gain: 1 });
     }
     this.hands.push(...rig.hands);
-    this.addEmblem(rig.joints.spine);
+    this.addEmblem(rig.emblem?.parent ?? rig.joints.spine, rig.emblem?.position);
     // Olhos e sobrancelhas 3D de modelos antigos saem: o rosto agora é desenhado.
     for (const eye of rig.eyes) eye.lid.parent?.removeFromParent();
     for (const brow of rig.brows) brow.removeFromParent();
-    // O nó 'face' (opcional) marca o centro da cabeça; a escala dele é o raio.
+    // O nó 'face' (opcional) marca o centro da cabeça; a escala dele são os raios (elipsoide).
     const anchor = rig.face;
+    const radii = anchor ? anchor.scale : new THREE.Vector3().setScalar(FACE_RADIUS);
     this.attachFace(
       anchor?.parent ?? rig.joints.head,
-      anchor ? anchor.position : FACE_CENTER,
-      anchor ? anchor.scale.x : FACE_RADIUS,
+      anchor?.position ?? FACE_CENTER,
+      radii,
       rig.mouth,
     );
   }
@@ -252,10 +270,11 @@ export class FighterModel {
   private attachFace(
     head: THREE.Object3D,
     center: THREE.Vector3,
-    radius: number,
+    radii: THREE.Vector3,
     mouthAt: THREE.Object3D | null,
   ): void {
-    this.face = createFacePlate(center, radius);
+    this.face = createFacePlate(center, 1);
+    this.face.scale.copy(radii);
     head.add(this.face);
     if (!this.faceOptions.mouth) {
       const mouth = new THREE.Mesh(
@@ -755,11 +774,11 @@ export class FighterModel {
         outline: 0.015,
       });
     }
-    this.attachFace(head, FACE_CENTER, FACE_RADIUS, null);
+    this.attachFace(head, FACE_CENTER, new THREE.Vector3().setScalar(FACE_RADIUS), null);
   }
 
   /** Emblema do lutador no peito (desenhado em textura, por cima da roupa). */
-  private addEmblem(spine: THREE.Object3D): void {
+  private addEmblem(spine: THREE.Object3D, at?: THREE.Vector3): void {
     const { look } = this;
     if (!look.emblem) return;
     const t = look.proportions?.torso ?? 1;
@@ -770,7 +789,8 @@ export class FighterModel {
         transparent: true,
       }),
     );
-    emblem.position.set(0.172 * look.bulk + 0.004, 0.34 * t, 0);
+    if (at) emblem.position.copy(at);
+    else emblem.position.set(0.172 * look.bulk + 0.004, 0.34 * t, 0);
     emblem.rotation.y = Math.PI / 2;
     spine.add(emblem);
   }

@@ -30,6 +30,8 @@ export interface BoundRig {
   mouth: THREE.Object3D | null;
   /** Centro do rosto desenhado (a escala é o raio). Sem ele, usa a posição padrão da cabeça. */
   face: THREE.Object3D | null;
+  /** Ponto do emblema na frente do peito (muda com a forma do tronco). */
+  emblem: THREE.Object3D | null;
   /** Mãos (crescem nos golpes de 'mãos grandes'). */
   hands: THREE.Object3D[];
 }
@@ -46,6 +48,7 @@ export function bindRig(root: THREE.Object3D): BoundRig | { missing: string[] } 
   const brows: THREE.Object3D[] = [];
   let mouth: THREE.Object3D | null = null;
   let face: THREE.Object3D | null = null;
+  let emblem: THREE.Object3D | null = null;
   const hands: THREE.Object3D[] = [];
 
   const propPrefix = baseName(PROP_PREFIX);
@@ -61,6 +64,7 @@ export function bindRig(root: THREE.Object3D): BoundRig | { missing: string[] } 
     if (name === 'brow') brows.push(node);
     if (name === 'mouth') mouth = node;
     if (name === 'face') face = node;
+    if (name === 'emblem') emblem = node;
     if (name === 'hand') hands.push(node);
     if (name === 'eye') {
       const lid = node.children.find((c) => baseName(c.name) === 'lid');
@@ -84,6 +88,7 @@ export function bindRig(root: THREE.Object3D): BoundRig | { missing: string[] } 
     brows,
     mouth,
     face,
+    emblem,
     hands,
   };
 }

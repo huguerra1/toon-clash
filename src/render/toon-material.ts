@@ -60,6 +60,8 @@ export function addExtrudedOutline(mesh: THREE.Mesh, thickness: number): THREE.M
     );
   }
   geometry.setAttribute('position', position);
+  // Malhas do .glb vêm indexadas: sem o índice, os triângulos do contorno saem embaralhados.
+  if (mesh.geometry.index) geometry.setIndex(mesh.geometry.index);
   const outline = new THREE.Mesh(geometry, outlineMaterial);
   outline.userData.outline = true;
   mesh.add(outline);

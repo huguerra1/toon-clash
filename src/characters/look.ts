@@ -52,7 +52,20 @@ export interface CharacterLook {
   personality?: Personality;
   /** Desenho do rosto (padrão: 'visor' com visor, 'glow' com olhos brilhantes, senão 'round'). */
   face?: FaceStyle;
+  /** Forma do tronco no modelo do Blender (silhueta reconhecível de longe). Padrão: 'standard'. */
+  body?: BodyShape;
+  /** Forma da cabeça no modelo do Blender. Padrão: 'round'. */
+  headShape?: HeadShape;
 }
+
+/**
+ * Silhuetas do tronco: 'wedge' triângulo invertido (ombros largos), 'block' quadradão,
+ * 'pear' pera (base larga), 'slim' fino e alto, 'blob' gota sem pescoço.
+ */
+export type BodyShape = 'standard' | 'wedge' | 'block' | 'pear' | 'slim' | 'blob';
+
+/** Formas de cabeça (elipsoides): redonda, larga, alta, feijão, pequena e achatada. */
+export type HeadShape = 'round' | 'wide' | 'tall' | 'bean' | 'small' | 'flat';
 
 /** Estilos de rosto desenhado: cada um conta algo da personalidade. */
 export type FaceStyle = 'round' | 'sharp' | 'dot' | 'glow' | 'visor' | 'sleepy' | 'lashes';

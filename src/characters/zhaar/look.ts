@@ -11,6 +11,8 @@ export const zhaarLook: CharacterLook = {
   hairStyle: 'bald',
   scale: 1.3,
   bulk: 1.4,
+  body: 'wedge',
+  headShape: 'small',
   extras: ['armor', 'shoulderPads', 'cape', 'glowEyes'],
   emblem: 'flame',
   personality: 'villain',

@@ -12,6 +12,8 @@ export const umbraLook: CharacterLook = {
   scale: 0.95,
   bulk: 0.9,
   face: 'glow',
+  body: 'slim',
+  headShape: 'round',
   extras: ['cape'],
   emblem: 'moon',
   personality: 'mystic',

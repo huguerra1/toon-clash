@@ -12,6 +12,8 @@ export const pipocaLook: CharacterLook = {
   scale: 0.9,
   bulk: 0.95,
   face: 'dot',
+  body: 'standard',
+  headShape: 'bean',
   extras: ['potHelmet', 'scarf', 'belt'],
   emblem: 'crown',
   personality: 'knight',

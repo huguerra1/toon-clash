@@ -12,6 +12,8 @@ export const capiLook: CharacterLook = {
   scale: 0.95,
   bulk: 1.3,
   face: 'sleepy',
+  body: 'pear',
+  headShape: 'wide',
   extras: ['snout', 'roundEars', 'cap'],
   emblem: 'cassette',
   personality: 'lazy',

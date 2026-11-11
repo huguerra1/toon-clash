@@ -42,16 +42,19 @@ Regras que o jogo assume:
 
 | Nome                                                                                                                                                       | Para que serve                                                                                         |
 | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| `eye` com filhos `lid` e `pupil`                                                                                                                           | olhos que piscam e mudam de expressão (o `lid` gira em Z)                                              |
-| `brow` (dois)                                                                                                                                              | sobrancelhas que mudam com a expressão                                                                 |
-| `mouth`                                                                                                                                                    | onde a boca desenhada é colocada (o jogo cria a boca)                                                  |
+| `face` (vazio)                                                                                                                                             | centro do rosto desenhado; a escala do vazio são os raios da cabeça (elipsoide)                        |
+| `emblem` (vazio)                                                                                                                                           | ponto na frente do peito onde o jogo cola o emblema                                                    |
+| `mouth`                                                                                                                                                    | boca separada para quem tem focinho (no resto, a boca vem no rosto desenhado)                          |
 | `prop:sword`, `prop:hammer`, `prop:jets`, `prop:bread`, `prop:rake`, `prop:lid`, `prop:wings`, `prop:horn`, `prop:shadowHand`, `prop:rocket`, `prop:stars` | acessórios que só aparecem durante certos golpes                                                       |
 | `dangle:<qualquer coisa>`                                                                                                                                  | ponto de articulação de algo que balança (capa, cabelo, cachecol); a peça é filha dele e pende para −Y |
 
 ## 4. Materiais
 
+- Olhos, sobrancelhas e nariz **não** são modelados: o jogo desenha o rosto (estilo de desenho
+  animado) num pedaço da cabeça marcado pelo vazio `face`. Modelos antigos com `eye`/`brow` ainda
+  carregam, mas essas peças são removidas.
 - Use cores sólidas ou uma textura pintada à mão (atlas de 1024×1024). O jogo troca os materiais
-  pelo toon shader de 3 tons e desenha o contorno preto sozinho.
+  pelo toon shader de 2 tons (luz e sombra chapadas) e desenha o contorno preto sozinho.
 - Partes que brilham (olhos de energia, joias, armas de luz): coloque cor em **Emission**.
 - Mantenha 3–6 mil triângulos por lutador.
 
