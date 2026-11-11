@@ -405,7 +405,8 @@ def build_head(look, spine, t, ext):
     sphere("skull", 1.0, head, center, skin, scale=(rx, ry, rz), segs=22, rings=16, subdiv=1)
     # Onde o jogo cola o rosto desenhado: centro e raios do crânio, um pouco para fora.
     empty("face", head, center, scale=(rx * 1.025, ry * 1.025, rz * 1.025))
-    if not ({"ears", "roundEars", "headphones"} & ext) and look["hairStyle"] != "hood":
+    # Orelhas humanas: não para capuz nem para a gota (Gelatino é translúcido e mostraria por dentro).
+    if not ({"ears", "roundEars", "headphones"} & ext) and look["hairStyle"] != "hood" and shape != "blob":
         for i, z in enumerate((rz - 0.01, -rz + 0.01)):
             sphere(f"ear{i}", 0.055, head, (0.0, cy - 0.01, z), skin, scale=(0.55, 1, 0.45), segs=10, rings=8)
 

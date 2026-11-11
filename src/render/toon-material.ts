@@ -61,7 +61,9 @@ export function addExtrudedOutline(mesh: THREE.Mesh, thickness: number): THREE.M
   }
   geometry.setAttribute('position', position);
   // Malhas do .glb vêm indexadas: sem o índice, os triângulos do contorno saem embaralhados.
-  if (mesh.geometry.index) geometry.setIndex(mesh.geometry.index);
+  // Cópia própria: o .glb em cache é compartilhado, e descartar um contorno não pode
+  // apagar da placa de vídeo o índice de outro lutador.
+  if (mesh.geometry.index) geometry.setIndex(mesh.geometry.index.clone());
   const outline = new THREE.Mesh(geometry, outlineMaterial);
   outline.userData.outline = true;
   mesh.add(outline);

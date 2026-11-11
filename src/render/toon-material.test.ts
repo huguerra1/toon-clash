@@ -7,7 +7,10 @@ describe('addExtrudedOutline', () => {
     const mesh = new THREE.Mesh(new THREE.SphereGeometry(1, 8, 6));
     expect(mesh.geometry.index).not.toBeNull();
     const outline = addExtrudedOutline(mesh, 0.1);
-    expect(outline.geometry.index).toBe(mesh.geometry.index);
+    expect(Array.from(outline.geometry.index!.array)).toEqual(
+      Array.from(mesh.geometry.index!.array),
+    );
+    expect(outline.geometry.index).not.toBe(mesh.geometry.index);
     expect(outline.userData.outline).toBe(true);
   });
 

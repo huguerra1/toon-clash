@@ -60,10 +60,17 @@ export function relativeDepthDelta(depthDiff: number, viewDistance: number, near
   return depthDiff / denom;
 }
 
+/** O que o passe precisa saber do material: véus transparentes (fumaça, vapor) não têm borda. */
+interface InkMaterialHint {
+  transparent?: boolean;
+  depthWrite?: boolean;
+}
+
 /**
  * Indica se um objeto visível deve ficar de fora do passe de normais/profundidade
- * (objetos marcados com `userData.noInk`, malhas de contorno antigo `userData.outline`
- * ou objetos que não são malhas de superfície, como sprites, pontos e linhas).
+ * (objetos marcados com `userData.noInk`, malhas de contorno antigo `userData.outline`,
+ * objetos que não são malhas de superfície, como sprites, pontos e linhas, e malhas
+ * transparentes que não gravam profundidade, como vapor e fumaça).
  */
 export function shouldHideFromInk(object: {
   visible: boolean;
@@ -71,10 +78,13 @@ export function shouldHideFromInk(object: {
   isSprite?: boolean;
   isPoints?: boolean;
   isLine?: boolean;
+  material?: InkMaterialHint | InkMaterialHint[];
 }): boolean {
   if (!object.visible) return false;
   if (object.isSprite === true || object.isPoints === true || object.isLine === true) return true;
-  return object.userData?.noInk === true || object.userData?.outline === true;
+  if (object.userData?.noInk === true || object.userData?.outline === true) return true;
+  const materials = Array.isArray(object.material) ? object.material : [object.material];
+  return materials.some((m) => m?.transparent === true && m.depthWrite === false);
 }
 
 /**

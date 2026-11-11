@@ -199,7 +199,8 @@ function stretchFor(f: FighterState, move: MoveDef | null): number {
  * passagem de preparação → golpe ativo → recuperação), a pose nova aparece na hora.
  */
 export function poseKey(f: FighterState, move: MoveDef | null): string {
-  if (!move) return f.state;
+  // Primeiro tick do estado (ex.: apanhar de novo reinicia o hitstun) também troca na hora.
+  if (!move) return f.stateTick === 0 ? `${f.state}:0` : f.state;
   const phase = f.stateTick < move.startup ? 0 : f.stateTick < move.startup + move.active ? 1 : 2;
   return `${f.state}:${move.name}:${phase}`;
 }
@@ -400,6 +401,9 @@ export class GameRenderer {
       const def = getCharacter(f.character);
       const models = this.models[index];
       const model = this.activeModel(match, index);
+      // Troca de forma: a forma nova entra no lugar, virada e na pose da anterior.
+      const shown = models.find((m) => m.root.visible && m !== model);
+      if (model && shown && !model.root.visible) model.takeOver(shown);
       for (const m of models) m.root.visible = m === model;
       if (!model) return;
 

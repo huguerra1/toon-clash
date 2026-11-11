@@ -132,6 +132,18 @@ describe('cálculo puro do traço de nanquim', () => {
     expect(alreadyHidden.visible).toBe(false);
   });
 
+  it('deixa de fora véus transparentes que não gravam profundidade (vapor, fumaça)', () => {
+    const veil = { visible: true, material: { transparent: true, depthWrite: false } };
+    const glass = { visible: true, material: { transparent: true, depthWrite: true } };
+    const solid = { visible: true, material: { transparent: false, depthWrite: true } };
+    expect(shouldHideFromInk(veil)).toBe(true);
+    expect(shouldHideFromInk(glass)).toBe(false);
+    expect(shouldHideFromInk(solid)).toBe(false);
+    expect(shouldHideFromInk({ visible: true, material: [solid.material, veil.material] })).toBe(
+      true,
+    );
+  });
+
   it('configura, redimensiona e libera recursos do InkOutlinePass sem WebGL', () => {
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(40, 16 / 9, 0.1, 200);

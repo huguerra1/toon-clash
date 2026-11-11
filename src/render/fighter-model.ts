@@ -145,7 +145,10 @@ export class FighterModel {
     }
     this.mergeStatic();
     this.root.traverse((o) => {
-      if (o instanceof THREE.Mesh && !o.userData.outline && o !== this.face) o.castShadow = true;
+      // Só peças de verdade fazem sombra (rosto, boca e emblema são planos com transparência).
+      if (o instanceof THREE.Mesh && o.material instanceof THREE.MeshToonMaterial) {
+        o.castShadow = true;
+      }
     });
     if (look.translucent) this.hideInnerOutlines();
   }
@@ -308,7 +311,9 @@ export class FighterModel {
     if (this.poseHold > 0) {
       this.held += dt;
       if (key === this.heldKey && this.held < this.poseHold) return;
-      dt = this.held;
+      // Cada desenho novo avança pelo menos um intervalo inteiro: numa troca logo após outro
+      // desenho, a pose não fica parada a 20% do caminho.
+      dt = Math.max(this.held, this.poseHold);
       this.held = 0;
       this.heldKey = key;
     }
@@ -335,6 +340,16 @@ export class FighterModel {
     }
     this.joints.armA.rotation.x = -p.spread;
     this.joints.armB.rotation.x = p.spread;
+  }
+
+  /** Assume o lugar de outro modelo (troca de forma): posição, giro e pose atuais. */
+  takeOver(other: FighterModel): void {
+    this.root.position.copy(other.root.position);
+    this.root.rotation.copy(other.root.rotation);
+    Object.assign(this.pose, other.pose);
+    this.lastX = null;
+    this.held = 0;
+    this.heldKey = '';
   }
 
   /** Clarão branco quando apanha. */
@@ -364,6 +379,8 @@ export class FighterModel {
   setExpression(expression: Expression): void {
     if (expression === this.expression) return;
     this.expression = expression;
+    // Expressão de olho já fechado/desenhado não pisca: evita desenhar o rosto duas vezes.
+    if (!canBlink(expression)) this.blinking = false;
     if (this.mouth) this.mouth.material.map = mouthTexture(MOUTH_FOR[expression]);
     this.drawFace();
   }
@@ -470,10 +487,16 @@ export class FighterModel {
 
   dispose(): void {
     this.root.removeFromParent();
+    // Materiais próprios (toon, rosto, boca, emblema, contorno do translúcido). O contorno
+    // compartilhado e as texturas em cache (rosto, boca, emblema) ficam para os outros.
+    const owned = new Set<THREE.Material>(this.materials);
     this.root.traverse((o) => {
-      if (o instanceof THREE.Mesh) o.geometry.dispose();
+      if (!(o instanceof THREE.Mesh)) return;
+      o.geometry.dispose();
+      const material = o.material as THREE.Material;
+      if (!o.userData.outline || material.transparent) owned.add(material);
     });
-    for (const m of this.materials) m.dispose();
+    for (const m of owned) m.dispose();
   }
 
   // -------------------------------------------------------------------------
@@ -807,6 +830,7 @@ export class FighterModel {
     if (at) emblem.position.copy(at);
     else emblem.position.set(0.172 * look.bulk + 0.004, 0.34 * t, 0);
     emblem.rotation.y = Math.PI / 2;
+    emblem.userData.noInk = true;
     spine.add(emblem);
   }
 
