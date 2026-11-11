@@ -10,21 +10,26 @@ function pose(base: Pose, patch: PosePatch): Pose {
   return { ...base, ...patch };
 }
 
-/** Guarda de luta, com respiração e o jeito de cada personalidade. */
+/**
+ * Guarda de luta, com respiração e o jeito de cada personalidade.
+ * Linha de ação em "C": tronco inclinado para o oponente, cabeça erguida olhando para ele e
+ * base aberta com joelhos dobrados (pose de desenho, que se lê de longe).
+ */
 function guard(time: number, personality?: Personality): Pose {
   const breath = Math.sin(time * 5) * 0.015;
   const base = pose(neutralPose(), {
-    hipsY: -0.04 + breath,
-    spine: 0.08,
-    head: -0.08,
-    armA: 0.65,
+    hipsY: -0.07 + breath,
+    spine: 0.16,
+    head: -0.14,
+    armA: 0.7,
     foreA: 1.9,
     armB: 0.45,
-    foreB: 2.0,
-    legA: 0.28,
-    shinA: -0.22,
-    legB: -0.25,
-    shinB: -0.12,
+    foreB: 2.05,
+    legA: 0.36,
+    shinA: -0.32,
+    legB: -0.32,
+    shinB: -0.16,
+    twist: 0.12,
   });
   const bob = Math.sin(time * 3);
   switch (personality) {

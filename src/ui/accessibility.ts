@@ -2,15 +2,29 @@
 
 export type ScreenShake = 'normal' | 'reduzido' | 'desligado';
 export type Flashes = 'normal' | 'reduzidos';
+/** 'desenho' segura cada pose por alguns quadros, como animação de TV feita à mão ("em dois"). */
+export type AnimationStyle = 'suave' | 'desenho';
 
 export interface AccessibilityPrefs {
   screenShake: ScreenShake;
   flashes: Flashes;
+  animation: AnimationStyle;
 }
 
 export const ACCESSIBILITY_KEY = 'toon-clash:acessibilidade';
 export const SCREEN_SHAKE_OPTIONS: readonly ScreenShake[] = ['normal', 'reduzido', 'desligado'];
 export const FLASH_OPTIONS: readonly Flashes[] = ['normal', 'reduzidos'];
+export const ANIMATION_OPTIONS: readonly AnimationStyle[] = ['suave', 'desenho'];
+
+/**
+ * Quanto tempo cada pose fica parada no estilo 'desenho': 1/15 s (4 quadros da lógica).
+ * Mais que isso esconderia golpes rápidos; o início de cada golpe sempre aparece na hora.
+ */
+const POSE_HOLD: Record<AnimationStyle, number> = { suave: 0, desenho: 1 / 15 };
+
+export function poseHold(animation: AnimationStyle): number {
+  return POSE_HOLD[animation];
+}
 
 const SHAKE_SCALE: Record<ScreenShake, number> = { normal: 1, reduzido: 0.35, desligado: 0 };
 const FLASH_SCALE: Record<Flashes, number> = { normal: 1, reduzidos: 0.3 };
@@ -46,6 +60,7 @@ export function defaultAccessibility(): AccessibilityPrefs {
   return {
     screenShake: prefersReducedMotion() ? 'reduzido' : 'normal',
     flashes: 'normal',
+    animation: 'suave',
   };
 }
 
@@ -60,11 +75,14 @@ export function loadAccessibility(): AccessibilityPrefs {
     return prefs;
   }
   if (typeof saved !== 'object' || saved === null) return prefs;
-  const { screenShake, flashes } = saved as Record<string, unknown>;
+  const { screenShake, flashes, animation } = saved as Record<string, unknown>;
   if (SCREEN_SHAKE_OPTIONS.includes(screenShake as ScreenShake)) {
     prefs.screenShake = screenShake as ScreenShake;
   }
   if (FLASH_OPTIONS.includes(flashes as Flashes)) prefs.flashes = flashes as Flashes;
+  if (ANIMATION_OPTIONS.includes(animation as AnimationStyle)) {
+    prefs.animation = animation as AnimationStyle;
+  }
   return prefs;
 }
 
@@ -72,7 +90,11 @@ export function saveAccessibility(prefs: AccessibilityPrefs): void {
   try {
     globalThis.localStorage?.setItem(
       ACCESSIBILITY_KEY,
-      JSON.stringify({ screenShake: prefs.screenShake, flashes: prefs.flashes }),
+      JSON.stringify({
+        screenShake: prefs.screenShake,
+        flashes: prefs.flashes,
+        animation: prefs.animation,
+      }),
     );
   } catch {
     /* Armazenamento bloqueado não deve interromper o jogo. */

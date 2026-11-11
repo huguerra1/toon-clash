@@ -19,6 +19,7 @@ import {
 import {
   type AccessibilityPrefs,
   flashScale,
+  poseHold,
   loadAccessibility,
   saveAccessibility,
   shakeScale,
@@ -193,6 +194,16 @@ function stretchFor(f: FighterState, move: MoveDef | null): number {
   }
 }
 
+/**
+ * Chave da pose para a animação em estilo desenho: quando muda (outro estado, outro golpe,
+ * passagem de preparação → golpe ativo → recuperação), a pose nova aparece na hora.
+ */
+export function poseKey(f: FighterState, move: MoveDef | null): string {
+  if (!move) return f.state;
+  const phase = f.stateTick < move.startup ? 0 : f.stateTick < move.startup + move.active ? 1 : 2;
+  return `${f.state}:${move.name}:${phase}`;
+}
+
 /** Desenha a partida. Não contém regra de jogo: só lê o MatchState e reage aos eventos. */
 export class GameRenderer {
   readonly renderer: THREE.WebGLRenderer;
@@ -292,6 +303,7 @@ export class GameRenderer {
     return LOOKS[id].map((_, form) => {
       const model = new FighterModel(getLook(id, form), getFighterSource(id, form));
       model.flashScale = flashScale(this.accessibility.flashes);
+      model.poseHold = poseHold(this.accessibility.animation);
       this.scene.add(model.root);
       return model;
     });
@@ -412,9 +424,9 @@ export class GameRenderer {
         this.walkPhase[index],
         this.reactions[index],
       );
-      model.applyPose(pose, rate, dt);
-
       const move = currentMove(f, def);
+      model.applyPose(pose, rate, dt, poseKey(state, move));
+
       model.setExpression(expressionFor(state, move?.special === true, model.look.personality));
       model.setStretch(stretchFor(state, move), dt);
       const visualProp = move?.visual ? VISUAL_PROPS[move.visual] : undefined;
@@ -495,7 +507,11 @@ export class GameRenderer {
     this.accessibility = { ...prefs };
     saveAccessibility(this.accessibility);
     const scale = flashScale(this.accessibility.flashes);
-    for (const m of this.models.flat()) m.flashScale = scale;
+    const hold = poseHold(this.accessibility.animation);
+    for (const m of this.models.flat()) {
+      m.flashScale = scale;
+      m.poseHold = hold;
+    }
   }
 
   private activeModel(match: MatchState, i: 0 | 1): FighterModel | undefined {

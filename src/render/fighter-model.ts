@@ -92,6 +92,10 @@ export class FighterModel {
   private flash = 0;
   /** Multiplicador do clarão branco (acessibilidade: flashes reduzidos). */
   flashScale = 1;
+  /** Segundos que cada pose fica parada (0 = animação contínua; > 0 = estilo desenho). */
+  poseHold = 0;
+  private held = 0;
+  private heldKey = '';
   /** Altura do quadril, depende do tamanho das pernas de cada lutador. */
   hipHeight: number;
   private readonly thigh: number;
@@ -295,8 +299,19 @@ export class FighterModel {
     this.setExpression('neutral');
   }
 
-  /** Aproxima a pose atual da pose alvo (rate 0..1 por quadro de 60 Hz). */
-  applyPose(target: Pose, rate: number, dt: number): void {
+  /**
+   * Aproxima a pose atual da pose alvo (rate 0..1 por quadro de 60 Hz).
+   * Com `poseHold`, a pose só muda de tempos em tempos (como desenho animado feito à mão),
+   * mas troca na hora quando `key` muda (começo de golpe, golpe ativo, apanhar).
+   */
+  applyPose(target: Pose, rate: number, dt: number, key = ''): void {
+    if (this.poseHold > 0) {
+      this.held += dt;
+      if (key === this.heldKey && this.held < this.poseHold) return;
+      dt = this.held;
+      this.held = 0;
+      this.heldKey = key;
+    }
     const k = 1 - Math.pow(1 - rate, dt * 60);
     for (const key of POSE_KEYS) this.pose[key] += (target[key] - this.pose[key]) * k;
     const p = this.pose;
