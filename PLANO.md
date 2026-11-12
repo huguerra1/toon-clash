@@ -14,19 +14,19 @@ Ben 10, Mutante Rex e Jovens Titãs são marcas registradas (Cartoon Network / W
 Usar nomes, visuais ou logos originais pode derrubar o repositório público (DMCA).
 **Regra do projeto:** arquétipos e poderes parecidos, mas nome, visual e cores próprios.
 
-| Lutador                   | Arquétipo                    | Ideia de mecânica                                                           |
-| ------------------------- | ---------------------------- | --------------------------------------------------------------------------- |
-| **Kai Volt**              | Garoto que se transforma     | Bracelete cósmico: troca entre 3 formas no meio da luta (normal/pedra/raio) |
-| **Nyx-R**                 | Engenheira com microrrobôs   | O enxame forma armas: lâmina, martelo, botas-foguete                        |
-| **Umbra**                 | Ilusionista das sombras      | Magia sombria, teleporte, agarrões à distância                              |
-| **Ferrum**                | Piloto de armadura pesada    | Pesado, canhão no braço, superarmadura em alguns golpes                     |
-| **Solara**                | Guardiã estelar              | Voa um pouco, estrelas de energia, combos aéreos                            |
-| **Feral**                 | Escoteiro que vira bicho     | Se transforma em animais diferentes para cada especial                      |
-| **Sir Pipoca**            | Cavaleiro mirim              | Baguete encantada, escudo de tampa, salto heroico                           |
-| **Gelatino**              | Criatura elástica            | Braços que esticam, quiques e investidas                                    |
-| **Capi Folgado**          | Zelador preguiçoso do parque | Ancinho, fitas cassete, rolamento rasteiro                                  |
-| **Lola Volume**           | DJ do fliperama              | Ondas sonoras, scratch em área, investida                                   |
-| **Warlord Zhaar** (chefe) | Conquistador espacial        | Chefe do modo arcade                                                        |
+| Lutador                   | Arquétipo                    | Ideia de mecânica                                                                            |
+| ------------------------- | ---------------------------- | -------------------------------------------------------------------------------------------- |
+| **Kai Volt**              | Garoto que se transforma     | Levou um raio e virou bateria viva: troca entre 3 formas no meio da luta (normal/pedra/raio) |
+| **Nyx-R**                 | Engenheira com microrrobôs   | O enxame forma armas: lâmina, martelo, botas-foguete                                         |
+| **Umbra**                 | Ilusionista das sombras      | Magia sombria, teleporte, agarrões à distância                                               |
+| **Ferrum**                | Piloto de armadura pesada    | Pesado, canhão no braço, superarmadura em alguns golpes                                      |
+| **Solara**                | Guardiã estelar              | Voa um pouco, estrelas de energia, combos aéreos                                             |
+| **Feral**                 | Escoteiro que vira bicho     | Se transforma em animais diferentes para cada especial                                       |
+| **Sir Pipoca**            | Cavaleiro mirim              | Baguete encantada, escudo de tampa, salto heroico                                            |
+| **Gelatino**              | Criatura elástica            | Braços que esticam, quiques e investidas                                                     |
+| **Capi Folgado**          | Zelador preguiçoso do parque | Ancinho, fitas cassete, rolamento rasteiro                                                   |
+| **Lola Volume**           | DJ do fliperama              | Ondas sonoras, scratch em área, investida                                                    |
+| **Warlord Zhaar** (chefe) | Conquistador espacial        | Chefe do modo arcade                                                                         |
 
 Os visuais (cores, roupas, cabelos, acessórios) foram revisados para não repetir combinações
 marcantes de personagens existentes.

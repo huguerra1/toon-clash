@@ -31,7 +31,7 @@ Multiplicador de dano: 1. Multiplicador de movimento da forma: 1.
 | Voadora (j_lk)                | (no ar) Chute Baixo       |       5 |     10 |        6 |    21 |   55 |    0 |      18 |        10 |       +12 |          +4 | médio                            |
 | Voadora Forte (j_hk)          | (no ar) Chute Alto        |       7 |     10 |        6 |    23 |   70 |    0 |      21 |        11 |       +15 |          +5 | médio                            |
 | Arremesso (throw)             | → + Soco Baixo (de perto) |       4 |      3 |       24 |    31 |  110 |    0 |       — |         — |         — |           — | agarrão (indefensável)           |
-| Rajada Ômega (omega_blast)    | ↓ → + Soco Baixo          |      14 |      1 |       20 |    35 |   70 |   11 |      20 |         — |         — |           — | especial; projétil (médio)       |
+| Rajada Volt (omega_blast)     | ↓ → + Soco Baixo          |      14 |      1 |       20 |    35 |   70 |   11 |      20 |         — |         — |           — | especial; projétil (médio)       |
 | Ombro Cometa (comet_shoulder) | ← → + Chute Baixo         |       8 |     14 |       16 |    38 |   90 |   14 |       — |         — |         — |           — | médio; especial; derruba; avanço |
 | Mudar Forma (shift_form)      | ↓ ↓ + Soco Alto           |      20 |      1 |       18 |    39 |    0 |    0 |       — |         — |         — |           — | especial; troca de forma         |
 
@@ -54,7 +54,7 @@ Multiplicador de dano: 1.3. Multiplicador de movimento da forma: 0.75.
 | Voadora (j_lk)                | (no ar) Chute Baixo       |       5 |     10 |        6 |    21 |   72 |    0 |      18 |        10 |       +12 |          +4 | médio                            |
 | Voadora Forte (j_hk)          | (no ar) Chute Alto        |       7 |     10 |        6 |    23 |   91 |    0 |      21 |        11 |       +15 |          +5 | médio                            |
 | Arremesso (throw)             | → + Soco Baixo (de perto) |       4 |      3 |       24 |    31 |  143 |    0 |       — |         — |         — |           — | agarrão (indefensável)           |
-| Rajada Ômega (omega_blast)    | ↓ → + Soco Baixo          |      14 |      1 |       20 |    35 |   91 |   14 |      20 |         — |         — |           — | especial; projétil (médio)       |
+| Rajada Volt (omega_blast)     | ↓ → + Soco Baixo          |      14 |      1 |       20 |    35 |   91 |   14 |      20 |         — |         — |           — | especial; projétil (médio)       |
 | Ombro Cometa (comet_shoulder) | ← → + Chute Baixo         |       8 |     14 |       16 |    38 |  117 |   18 |       — |         — |         — |           — | médio; especial; derruba; avanço |
 | Mudar Forma (shift_form)      | ↓ ↓ + Soco Alto           |      20 |      1 |       18 |    39 |    0 |    0 |       — |         — |         — |           — | especial; troca de forma         |
 
@@ -77,7 +77,7 @@ Multiplicador de dano: 0.85. Multiplicador de movimento da forma: 1.45.
 | Voadora (j_lk)                | (no ar) Chute Baixo       |       5 |     10 |        6 |    21 |   47 |    0 |      18 |        10 |       +12 |          +4 | médio                            |
 | Voadora Forte (j_hk)          | (no ar) Chute Alto        |       7 |     10 |        6 |    23 |   60 |    0 |      21 |        11 |       +15 |          +5 | médio                            |
 | Arremesso (throw)             | → + Soco Baixo (de perto) |       4 |      3 |       24 |    31 |   94 |    0 |       — |         — |         — |           — | agarrão (indefensável)           |
-| Rajada Ômega (omega_blast)    | ↓ → + Soco Baixo          |      14 |      1 |       20 |    35 |   60 |    9 |      20 |         — |         — |           — | especial; projétil (médio)       |
+| Rajada Volt (omega_blast)     | ↓ → + Soco Baixo          |      14 |      1 |       20 |    35 |   60 |    9 |      20 |         — |         — |           — | especial; projétil (médio)       |
 | Ombro Cometa (comet_shoulder) | ← → + Chute Baixo         |       8 |     14 |       16 |    38 |   77 |   11 |       — |         — |         — |           — | médio; especial; derruba; avanço |
 | Mudar Forma (shift_form)      | ↓ ↓ + Soco Alto           |      20 |      1 |       18 |    39 |    0 |    0 |       — |         — |         — |           — | especial; troca de forma         |
 

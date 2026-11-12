@@ -34,13 +34,15 @@ O plano de jogo detalhado está em `PLANO.md`. Este arquivo acompanha o checklis
 - [x] Servidor pronto para hospedagem grátis: `/healthz`, `ALLOWED_ORIGINS`, Docker (#51)
 - [x] Fontes embutidas no build, sem Google Fonts (#52)
 - [ ] Dono: página de apoio, conta no Itch.io, variável `VITE_SUPPORT_URL`, `ALLOWED_ORIGINS` no Render
-- [ ] Revisar personagens parecidos com desenhos conhecidos (história do Kai Volt, final do Arcade)
+- [x] Reescrever a história do Kai Volt, a bio do Zhaar e o final do Arcade sem bracelete/relógio cósmico
+- [ ] Tirar o aparelho brilhante do pulso do Kai e revisar o visual dos 11 lutadores
 - [ ] Build de portal sem o modo Online
 - [ ] Dono: escolher Poki (exclusivo) ou CrazyGames e enviar; depois, integrar a SDK escolhida
 - [ ] Anúncio premiado nas recompensas (continuar, cores alternativas, Zhaar)
 
 ## Log
 
+- 2026-11-12 — Kai Volt com origem nova ("levou um raio e virou bateria viva"), Rajada Volt e Toonality Curto-Circuito; Zhaar coleciona planetas como figurinhas; final do Arcade sem "relógio cósmico".
 - 2026-11-12 — Plano de monetização (`docs/MONETIZACAO.md`) com análise da proposta do Gemini e divisão Claude × dono. Adiantados sem conta nem custo: módulo de anúncios com pausa de loop/som (#48), botão Apoie configurável (#49), pacote `.zip` do Itch.io (#50), servidor com healthcheck, origens permitidas e Dockerfile (#51), fontes embutidas (#52), aviso do README e auditoria de licenças.
 
 - 2026-11-12 — Roupas com detalhe (gola, barra, punhos, bolsos, zíper, listras, remendos, barra rasgada, bico do tênis) montadas no Blender como preenchimento chapado + traço de nanquim; fim dos anéis que viravam riscos tortos, orelha sem contorno e armadura curva. Braços balançam ao andar; braços do Capi fora da barriga; guarda do Zhaar aberta.

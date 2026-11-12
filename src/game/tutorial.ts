@@ -104,7 +104,7 @@ export const LESSONS: Lesson[] = [
   },
   {
     title: 'Golpe especial',
-    text: 'Faça a Rajada Ômega 2 vezes: ↓, ↘, → e Soco Baixo, num movimento só.',
+    text: 'Faça a Rajada Volt 2 vezes: ↓, ↘, → e Soco Baixo, num movimento só.',
     keys: '{down}, {down}+{right}, {right} + {lp}',
     goal: 2,
     dummy: 'parado',

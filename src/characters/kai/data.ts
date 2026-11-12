@@ -3,8 +3,8 @@ import { defineCharacter } from '../common';
 export const kai = defineCharacter({
   id: 'kai',
   name: 'Kai Volt',
-  title: 'O Garoto do Bracelete Cósmico',
-  bio: 'Achou um bracelete cósmico dentro de um meteorito e agora troca de forma no meio da briga.',
+  title: 'O Para-Raios Ambulante',
+  bio: 'Levou um raio na aula de educação física e virou bateria viva: aterra a carga e vira pedra, solta tudo e vira faísca.',
   pronoun: 'ele',
   maxHealth: 1000,
   walkSpeed: 0.077,
@@ -18,7 +18,7 @@ export const kai = defineCharacter({
   ],
   moves: {
     omega_blast: {
-      name: 'Rajada Ômega',
+      name: 'Rajada Volt',
       anim: 'projectile',
       startup: 14,
       active: 1,
@@ -69,7 +69,7 @@ export const kai = defineCharacter({
     { motion: ['D', 'D'], button: 'hp', move: 'shift_form' },
   ],
   toonality: {
-    name: 'Bracelete Descontrolado',
+    name: 'Curto-Circuito',
     motion: ['F', 'F', 'D'],
     button: 'hk',
     kind: 'shrink',
