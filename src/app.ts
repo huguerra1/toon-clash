@@ -8,6 +8,7 @@ import {
   cpuInput,
   dummyInput,
 } from './ai/cpu';
+import type { Ads } from './ads/ads';
 import type { AudioSystem } from './audio/audio';
 import { getLook } from './characters/looks';
 import { STARTING_ROSTER, getCharacter } from './characters/roster';
@@ -71,6 +72,8 @@ export interface Screen {
   tick?(): void;
   /** Esconde a interface e mostra o HUD (tela de luta). */
   fight?: boolean;
+  /** Trecho jogável (avisa o portal de jogos: gameplayStart/Stop). */
+  playing?: boolean;
 }
 
 interface Session {
@@ -137,6 +140,8 @@ export class App {
   onlineScreen: ((app: App) => Screen) | null = null;
   /** Partida online em andamento. */
   online: OnlineHooks | null = null;
+  /** Anúncios do portal (src/ads); sem portal, nenhum anúncio. */
+  ads: Ads | null = null;
 
   constructor(
     private readonly root: HTMLElement,
@@ -167,7 +172,18 @@ export class App {
     this.screen = screen;
     this.root.appendChild(screen.el);
     this.root.classList.toggle('fighting', screen.fight === true);
+    if (screen.playing) this.ads?.gameplayStart();
+    else this.ads?.gameplayStop();
     this.controls.syncMenu();
+  }
+
+  /**
+   * Intervalo comercial entre lutas (o Ads respeita o tempo mínimo entre anúncios) e depois
+   * segue para `next`. Nunca no online: o outro jogador ficaria esperando.
+   */
+  private betweenFights(next: () => void): void {
+    if (!this.ads || this.session?.mode === 'online') return next();
+    void this.ads.commercialBreak().then(next, next);
   }
 
   /** Partida parada só para mostrar os lutadores ao fundo dos menus. */
@@ -717,6 +733,7 @@ export class App {
     return {
       el,
       fight: true,
+      playing: true,
       handle: (e) => {
         if (e.action === 'pause' && this.session?.mode !== 'online') this.openPause();
       },
@@ -766,6 +783,7 @@ export class App {
     const close = () => {
       menu.el.remove();
       this.paused = null;
+      this.ads?.gameplayStart();
       this.controls.syncMenu();
     };
     const dummyIndex = () => DUMMY_MODES.findIndex((d) => d.id === this.dummy);
@@ -826,6 +844,7 @@ export class App {
     menu.el.classList.add('pause');
     this.root.appendChild(menu.el);
     this.paused = menu;
+    this.ads?.gameplayStop();
     this.controls.syncMenu();
   }
 
@@ -882,11 +901,12 @@ export class App {
         items = [
           {
             label: 'Próxima luta',
-            action: () => {
-              ladder.index++;
-              this.arcadeStage();
-              this.show(this.versusScreen());
-            },
+            action: () =>
+              this.betweenFights(() => {
+                ladder.index++;
+                this.arcadeStage();
+                this.show(this.versusScreen());
+              }),
           },
           { label: 'Desistir', action: () => this.show(this.mainMenu()) },
         ];
@@ -897,7 +917,7 @@ export class App {
       items = this.online.resultItems();
     } else {
       items = [
-        { label: 'Revanche', action: () => this.beginFight() },
+        { label: 'Revanche', action: () => this.betweenFights(() => this.beginFight()) },
         { label: 'Trocar lutadores', action: () => this.show(this.selectScreen(s.mode, s.level)) },
         { label: 'Menu principal', action: () => this.show(this.mainMenu()) },
       ];

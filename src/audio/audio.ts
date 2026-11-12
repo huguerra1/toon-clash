@@ -33,6 +33,8 @@ export class AudioSystem {
   private requestedTrack?: MusicTrack;
   private isMuted = readPreference(MUTED_KEY) === 'true';
   private level = 0.8;
+  /** Pausado por um anúncio: contexto suspenso e nenhum som novo até `resume()`. */
+  private adPaused = false;
 
   constructor() {
     const stored = readPreference(VOLUME_KEY);
@@ -48,7 +50,7 @@ export class AudioSystem {
   }
 
   handleEvents(events: readonly GameEvent[]): void {
-    if (this.isMuted || this.level === 0) return;
+    if (this.isMuted || this.level === 0 || this.adPaused) return;
     for (const event of events) {
       if (event.type === 'announce') this.say(event.text);
       else {
@@ -70,12 +72,31 @@ export class AudioSystem {
   }
 
   ui(sound: UiSound): void {
-    if (this.isMuted || this.level === 0) return;
+    if (this.isMuted || this.level === 0 || this.adPaused) return;
     this.ensureSynth()?.play(uiVoices(sound));
   }
 
   say(text: string): void {
-    if (!this.isMuted) this.announcer.say(text, this.level);
+    if (!this.isMuted && !this.adPaused) this.announcer.say(text, this.level);
+  }
+
+  /** Silencia tudo enquanto um anúncio passa (suspende o contexto e corta o locutor). */
+  pause(): void {
+    this.adPaused = true;
+    this.announcer.cancel();
+    const context = this.synth?.context;
+    if (context?.state === 'running') void context.suspend().catch(() => {});
+  }
+
+  /** Volta o som depois do anúncio, de onde parou. */
+  resume(): void {
+    this.adPaused = false;
+    const context = this.synth?.context;
+    if (context?.state === 'suspended') void context.resume().catch(() => {});
+  }
+
+  get paused(): boolean {
+    return this.adPaused;
   }
 
   get muted(): boolean {
@@ -123,7 +144,7 @@ export class AudioSystem {
         this.music = new MusicPlayer(this.synth);
         this.applyVolume();
       }
-      if (this.synth.context.state === 'suspended') {
+      if (this.synth.context.state === 'suspended' && !this.adPaused) {
         void this.synth.context.resume().catch(() => {});
       }
       return this.synth;

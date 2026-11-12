@@ -54,6 +54,9 @@ class FakeAudioContext {
   resume = vi.fn(async () => {
     this.state = 'running';
   });
+  suspend = vi.fn(async () => {
+    this.state = 'suspended';
+  });
   close = vi.fn(async () => {
     this.state = 'closed';
   });
@@ -171,6 +174,36 @@ describe('AudioSystem', () => {
     expect(context().resume).toHaveBeenCalledOnce();
     audio.unlock();
     expect(context().state).toBe('running');
+  });
+
+  it('pausa para anúncio: suspende o contexto, ignora sons e só retoma no resume', async () => {
+    const audio = new AudioSystem();
+    audio.ui('move');
+    const before = context().sources.length;
+    audio.pause();
+    await Promise.resolve();
+    expect(audio.paused).toBe(true);
+    expect(context().suspend).toHaveBeenCalledOnce();
+    audio.ui('confirm');
+    audio.handleEvents([{ type: 'jump', player: 0 }]);
+    audio.unlock();
+    expect(context().sources).toHaveLength(before);
+    expect(context().resume).not.toHaveBeenCalled();
+    audio.resume();
+    await Promise.resolve();
+    expect(context().resume).toHaveBeenCalledOnce();
+    expect(context().state).toBe('running');
+    audio.ui('confirm');
+    expect(context().sources.length).toBeGreaterThan(before);
+  });
+
+  it('pausa e retomada sem contexto criado não quebram', () => {
+    const audio = new AudioSystem();
+    expect(() => {
+      audio.pause();
+      audio.resume();
+    }).not.toThrow();
+    expect(FakeAudioContext.instances).toHaveLength(0);
   });
 
   it('limita vozes em rajadas e desconecta as vozes roubadas', () => {
