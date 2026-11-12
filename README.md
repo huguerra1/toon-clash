@@ -65,15 +65,16 @@ vantagens) está em [docs/FRAME-DATA.md](docs/FRAME-DATA.md).
 
 ## Scripts
 
-| Comando              | O que faz                                                  |
-| -------------------- | ---------------------------------------------------------- |
-| `npm run dev`        | Servidor de desenvolvimento com recarga automática         |
-| `npm run server`     | Servidor de salas do modo online (porta 8787)              |
-| `npm test`           | Testes (Vitest)                                            |
-| `npm run lint`       | Verifica o código com ESLint                               |
-| `npm run format`     | Formata o código com Prettier                              |
-| `npm run build`      | Gera a versão de produção em `dist/`                       |
-| `npm run frame-data` | Gera `docs/FRAME-DATA.md` a partir dos dados dos lutadores |
+| Comando                | O que faz                                                  |
+| ---------------------- | ---------------------------------------------------------- |
+| `npm run dev`          | Servidor de desenvolvimento com recarga automática         |
+| `npm run server`       | Servidor de salas do modo online (porta 8787)              |
+| `npm test`             | Testes (Vitest)                                            |
+| `npm run lint`         | Verifica o código com ESLint                               |
+| `npm run format`       | Formata o código com Prettier                              |
+| `npm run build`        | Gera a versão de produção em `dist/`                       |
+| `npm run frame-data`   | Gera `docs/FRAME-DATA.md` a partir dos dados dos lutadores |
+| `npm run package:itch` | Gera o build e o `.zip` para o Itch.io em `release/`       |
 
 ## Estrutura
 
