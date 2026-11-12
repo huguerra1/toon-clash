@@ -66,9 +66,48 @@ vá em **Online**, crie a sala em uma e entre com o código na outra.
 ## Publicando o servidor
 
 O GitHub Pages só hospeda arquivos estáticos; o servidor precisa de um serviço que rode Node:
-Render, Railway, Fly.io ou uma VPS. Ele só precisa de `npm install` e `npm run server`, e lê a
-porta da variável `PORT`. Em produção use `wss://` (HTTPS), porque páginas HTTPS não podem abrir
+Render, Koyeb, Fly.io, Railway ou uma VPS. Ele só precisa de `npm install` e `npm run server` (ou
+do `Dockerfile` da raiz). Em produção use `wss://` (HTTPS), porque páginas HTTPS não podem abrir
 `ws://`.
+
+| Variável          | Para quê                                                                   |
+| ----------------- | -------------------------------------------------------------------------- |
+| `PORT`            | Porta HTTP/WebSocket. As hospedagens preenchem sozinhas; padrão 8787.      |
+| `ALLOWED_ORIGINS` | Sites que podem abrir salas, separados por vírgula. Vazio = qualquer site. |
+
+Exemplo de `ALLOWED_ORIGINS` para o site e o Itch.io:
+`https://huguerra1.github.io,https://*.itch.zone`. Conexões de outros sites recebem 401. Em
+portais (Poki, CrazyGames), o jogo roda no domínio deles: acrescente o domínio que o portal usar.
+
+`GET /healthz` responde `{"ok":true,"rooms":…,"players":…,"uptime":…}` para o healthcheck. O
+servidor fecha as conexões direito quando recebe `SIGTERM` (nova publicação ou desligamento).
+
+### Hospedagens grátis: o que esperar
+
+Nenhuma é "grátis e sempre ligada". Os planos grátis **dormem** sem tráfego e acordam na primeira
+conexão (a tela Online avisa "Acordando o servidor…"). Durante uma luta o cliente manda `ping` a
+cada poucos segundos, então o servidor não dorme no meio da partida; o que derruba sala é **nova
+publicação ou reinício** da hospedagem (as salas ficam só na memória).
+
+| Serviço | Como sobe                        | Dorme?                              | Observação                                          |
+| ------- | -------------------------------- | ----------------------------------- | --------------------------------------------------- |
+| Render  | `render.yaml` (Blueprint)        | Sim, após 15 min sem tráfego        | Já configurado; acorda em até ~1 min                |
+| Koyeb   | `Dockerfile` (ou buildpack Node) | Sim, após 1 h sem tráfego           | Confira se o plano grátis ainda existe ao cadastrar |
+| Fly.io  | `Dockerfile` (`fly launch`)      | Pode desligar a máquina sem tráfego | Contas novas precisam de cartão; não é mais grátis  |
+
+Os planos mudam com frequência: confira a página de preços antes de escolher. Não vale a pena
+"manter acordado" com ping externo: além de gastar a cota grátis, alguns serviços proíbem isso.
+
+### Com Docker (Koyeb, Fly.io, Cloud Run…)
+
+```bash
+docker build -t toon-clash-server .
+docker run -p 8787:8787 -e ALLOWED_ORIGINS=https://huguerra1.github.io toon-clash-server
+```
+
+O contêiner leva só `package.json`, `package-lock.json` e `server/server.mjs` (o jogo não vai
+junto), roda como usuário sem privilégio e tem `HEALTHCHECK` em `/healthz`. No painel do serviço,
+aponte para este repositório com "Dockerfile" como método de build e porta 8787.
 
 ### No Render (grátis, já configurado)
 
