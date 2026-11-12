@@ -979,7 +979,7 @@ export class App {
       'div',
       'screen ending-screen panel',
       `<h2>PARABÉNS!</h2>
-       <p>${name} derrotou Warlord Zhaar e o relógio cósmico está a salvo.</p>
+       <p>${name} derrotou Warlord Zhaar e a Terra continua fora do álbum dele. Até a próxima temporada!</p>
        ${first ? '<p class="unlock">Novo lutador liberado: <b>Warlord Zhaar</b>!</p>' : ''}
        <p class="credits">Toon Clash — criado por ${AUTHOR}. Personagens originais.</p>
        <p class="blink">ENTER para voltar ao menu</p>`,
