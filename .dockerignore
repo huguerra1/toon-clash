@@ -1,0 +1,5 @@
+# O contêiner só precisa de package.json, package-lock.json e server/.
+*
+!package.json
+!package-lock.json
+!server/server.mjs

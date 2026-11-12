@@ -8,10 +8,14 @@ services:
     region: virginia
     buildCommand: npm ci --omit=dev
     startCommand: npm run server
-    healthCheckPath: /
+    healthCheckPath: /healthz
     envVars:
       - key: NODE_VERSION
         value: '22'
+      # Sites que podem abrir salas (vazio = qualquer um). Preencha no painel do Render, ex.:
+      # https://huguerra1.github.io,https://*.itch.zone
+      - key: ALLOWED_ORIGINS
+        sync: false
     # Só publica de novo quando o servidor muda, não a cada mudança no jogo.
     buildFilter:
       paths:

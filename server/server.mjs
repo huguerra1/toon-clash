@@ -2,6 +2,14 @@
 // as mensagens entre eles. Não roda a partida — cada navegador simula a luta (rollback).
 //
 // Uso: npm run server            (porta 8787 ou a variável de ambiente PORT)
+//
+// Variáveis de ambiente (todas opcionais):
+//   PORT             porta HTTP/WebSocket (os serviços de hospedagem definem sozinhos)
+//   ALLOWED_ORIGINS  sites que podem abrir salas, separados por vírgula; aceita "*" no começo
+//                    do domínio (ex.: https://huguerra1.github.io,https://*.itch.zone).
+//                    Vazio = qualquer site.
+//
+// GET /healthz responde JSON para o healthcheck da hospedagem.
 import { createServer } from 'node:http';
 import { pathToFileURL } from 'node:url';
 import { WebSocketServer } from 'ws';
@@ -11,6 +19,37 @@ const IDLE_MS = 30 * 60 * 1000;
 // Cabe a oferta SDP do WebRTC (que passa pelo relay) com folga.
 const MAX_MESSAGE_BYTES = 16 * 1024;
 
+/**
+ * Lê a lista de origens permitidas (ALLOWED_ORIGINS).
+ * @param {string | undefined} value
+ * @returns {string[]}
+ */
+export function parseOrigins(value) {
+  return (value ?? '')
+    .split(',')
+    .map((o) => o.trim().replace(/\/+$/, '').toLowerCase())
+    .filter(Boolean);
+}
+
+/**
+ * Diz se um site pode abrir salas. Lista vazia libera tudo. "https://*.itch.zone" aceita
+ * qualquer subdomínio (mas não o próprio itch.zone nem outro protocolo).
+ * @param {string | undefined} origin
+ * @param {string[]} allowed
+ */
+export function originAllowed(origin, allowed) {
+  if (allowed.length === 0) return true;
+  if (!origin) return false;
+  const o = origin.toLowerCase();
+  return allowed.some((rule) => {
+    const star = rule.indexOf('://*.');
+    if (star === -1) return o === rule;
+    const scheme = rule.slice(0, star + 3);
+    const suffix = rule.slice(star + 4);
+    return o.startsWith(scheme) && o.endsWith(suffix) && o.length > scheme.length + suffix.length;
+  });
+}
+
 function send(ws, message) {
   if (ws.readyState === ws.OPEN) ws.send(JSON.stringify(message));
 }
@@ -18,9 +57,14 @@ function send(ws, message) {
 /**
  * Sobe o servidor. Devolve a porta real (útil com port = 0 nos testes) e uma função para fechar.
  * @param {number} port
+ * @param {{ allowedOrigins?: string[] }} options
  * @returns {Promise<{ port: number; close: () => Promise<void> }>}
  */
-export function startServer(port = Number(process.env.PORT ?? 8787)) {
+export function startServer(
+  port = Number(process.env.PORT ?? 8787),
+  { allowedOrigins = parseOrigins(process.env.ALLOWED_ORIGINS) } = {},
+) {
+  const startedAt = Date.now();
   /** @type {Map<string, { players: import('ws').WebSocket[]; touched: number }>} */
   const rooms = new Map();
 
@@ -44,11 +88,28 @@ export function startServer(port = Number(process.env.PORT ?? 8787)) {
   };
 
   const http = createServer((req, res) => {
+    if (req.url?.split('?')[0] === '/healthz') {
+      res.writeHead(200, { 'content-type': 'application/json', 'cache-control': 'no-store' });
+      res.end(
+        JSON.stringify({
+          ok: true,
+          rooms: rooms.size,
+          players: wss.clients.size,
+          uptime: Math.round((Date.now() - startedAt) / 1000),
+        }),
+      );
+      return;
+    }
     res.writeHead(200, { 'content-type': 'text/plain; charset=utf-8' });
     res.end(`Toon Clash server ok — ${rooms.size} sala(s)\n`);
   });
 
-  const wss = new WebSocketServer({ server: http, maxPayload: MAX_MESSAGE_BYTES });
+  const wss = new WebSocketServer({
+    server: http,
+    maxPayload: MAX_MESSAGE_BYTES,
+    // Recusa (401) conexões de sites fora da lista ALLOWED_ORIGINS, quando ela existe.
+    verifyClient: ({ origin }) => originAllowed(origin, allowedOrigins),
+  });
 
   wss.on('connection', (ws) => {
     ws.isAlive = true;
@@ -146,6 +207,13 @@ export function startServer(port = Number(process.env.PORT ?? 8787)) {
 
 // Rodando direto (npm run server), sobe na porta padrão.
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  const { port } = await startServer();
+  const { port, close } = await startServer();
   console.log(`Toon Clash server ouvindo em ws://localhost:${port}`);
+  // A hospedagem manda SIGTERM ao publicar de novo ou desligar: fecha as conexões direito.
+  for (const signal of ['SIGTERM', 'SIGINT']) {
+    process.once(signal, () => {
+      console.log(`${signal}: encerrando o servidor`);
+      void close().then(() => process.exit(0));
+    });
+  }
 }
