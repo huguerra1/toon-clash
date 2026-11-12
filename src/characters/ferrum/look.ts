@@ -16,5 +16,12 @@ export const ferrumLook: CharacterLook = {
   extras: ['cannonArm', 'visor', 'shoulderPads', 'armor', 'cap'],
   emblem: 'shield',
   personality: 'brute',
+  outfit: {
+    sleeves: 'short',
+    trim: 0x2e2e33,
+    pantsPockets: true,
+    kneePatch: 0x8a96a3,
+    shoeTrim: 0xf2b134,
+  },
   proportions: { head: 0.9, arms: 1.15, torso: 1.12, legs: 0.92 },
 };

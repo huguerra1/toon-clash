@@ -16,6 +16,13 @@ const base: CharacterLook = {
   extras: ['watch'],
   emblem: 'bolt',
   personality: 'hero',
+  outfit: {
+    sleeves: 'short',
+    trim: 0xf4f4f4,
+    pantsPockets: true,
+    rolledCuffs: 0x4a6a8a,
+    shoeTrim: 0x3dd6ff,
+  },
   proportions: { head: 1.12, legs: 0.95 },
 };
 
@@ -36,6 +43,8 @@ export const kaiLooks: CharacterLook[] = [
     headShape: 'small',
     extras: ['watch', 'rocks'],
     personality: 'brute',
+    // Corpo de pedra: sem roupa de pano por cima.
+    outfit: { sleeves: 'none' },
     proportions: { head: 0.95, arms: 1.15, torso: 1.1, legs: 0.9 },
   },
   {
@@ -51,6 +60,14 @@ export const kaiLooks: CharacterLook[] = [
     body: 'slim',
     headShape: 'tall',
     extras: ['watch', 'glowEyes', 'glowHands'],
+    // Macacão elétrico com listras.
+    outfit: {
+      sleeves: 'long',
+      trim: 0xfff35a,
+      stripes: 0xfff35a,
+      zipper: true,
+      shoeTrim: 0x1e3a8a,
+    },
     proportions: { head: 1.05, legs: 1.08 },
   },
 ];

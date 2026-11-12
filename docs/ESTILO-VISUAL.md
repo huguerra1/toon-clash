@@ -70,6 +70,20 @@ node tools/blender/looks-json.mjs
   dois"). A troca para golpe ativo, recuperação ou outro estado aparece na hora, para nenhum
   golpe ficar escondido.
 
+### 5. Roupas com detalhe
+
+Cada lutador tem uma roupa descrita em `outfit` no `look.ts` (mangas, cor de acabamento, jaqueta
+aberta, zíper, botões, bolsos, barra dobrada, remendo no joelho, listras, barra rasgada, bico do
+tênis). O Blender monta os detalhes como **preenchimento chapado + traço de nanquim** colados na
+superfície (peças `flat:`, sem contorno de casca). Gola, barra, punhos, cinto e cachecol eram
+anéis (toros) que flutuavam em volta do braço e, com o contorno, viravam riscos pretos tortos.
+A orelha sem contorno deixou de parecer um segundo olho, e a armadura virou um peitoral curvo.
+
+| Antes                                            | Depois                                             |
+| ------------------------------------------------ | -------------------------------------------------- |
+| ![roupas antes](img/visual/antes-roupas.jpg)     | ![roupas depois](img/visual/depois-roupas.jpg)     |
+| ![detalhes antes](img/visual/antes-detalhes.jpg) | ![detalhes depois](img/visual/depois-detalhes.jpg) |
+
 ## Correções encontradas no caminho
 
 - Canvas de textura agora são desenhados pela CPU (`src/render/canvas.ts`): no canvas acelerado

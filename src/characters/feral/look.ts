@@ -16,5 +16,12 @@ export const feralLook: CharacterLook = {
   extras: ['ears', 'belt'],
   emblem: 'leaf',
   personality: 'wild',
+  outfit: {
+    sleeves: 'short',
+    ragged: true,
+    pantsPockets: true,
+    kneePatch: 0x8a7650,
+    shoeTrim: 0xffd23f,
+  },
   proportions: { head: 1.15, legs: 0.9, arms: 1.08 },
 };

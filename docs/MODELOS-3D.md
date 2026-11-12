@@ -47,6 +47,7 @@ Regras que o jogo assume:
 | `mouth`                                                                                                                                                    | boca separada para quem tem focinho (no resto, a boca vem no rosto desenhado)                          |
 | `prop:sword`, `prop:hammer`, `prop:jets`, `prop:bread`, `prop:rake`, `prop:lid`, `prop:wings`, `prop:horn`, `prop:shadowHand`, `prop:rocket`, `prop:stars` | acessórios que só aparecem durante certos golpes                                                       |
 | `dangle:<qualquer coisa>`                                                                                                                                  | ponto de articulação de algo que balança (capa, cabelo, cachecol); a peça é filha dele e pende para −Y |
+| `flat:<qualquer coisa>`                                                                                                                                    | detalhe chapado colado na roupa (gola, barra, bolso, traço de nanquim): o jogo não põe contorno nele   |
 
 ## 4. Materiais
 

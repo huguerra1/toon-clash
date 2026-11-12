@@ -27,6 +27,7 @@ O plano de jogo detalhado está em `PLANO.md`. Este arquivo acompanha o checklis
 
 ## Log
 
+- 2026-11-12 — Roupas com detalhe (gola, barra, punhos, bolsos, zíper, listras, remendos, barra rasgada, bico do tênis) montadas no Blender como preenchimento chapado + traço de nanquim; fim dos anéis que viravam riscos tortos, orelha sem contorno e armadura curva. Braços balançam ao andar; braços do Capi fora da barriga; guarda do Zhaar aberta.
 - 2026-11-11 — Refatoração visual dos lutadores (estilo desenho de TV): rosto desenhado com 7 estilos, sombra chapada em 2 tons, traço de nanquim no cenário, formas novas no Blender (silhuetas por personagem, luvas, tênis grandes), guarda com linha de ação e opção de animação "desenho". Antes/depois em `docs/ESTILO-VISUAL.md`. Traço de nanquim feito pelo Gemini; revisão cruzada pelo Gemini.
 - 2026-11-10 — Movimento liso (#31): lutadores, projéteis e câmera interpolados entre ticks, câmera pelo tempo real, passos pela distância e virada suave.
 - 2026-11-10 — Golpes com impacto (#32): preparação, estalo e pausa no impacto, giro de tronco e avanço do quadril, reações diferentes a golpe alto/corpo/forte, tremor no hitstop, zoom no golpe forte e risco de movimento.

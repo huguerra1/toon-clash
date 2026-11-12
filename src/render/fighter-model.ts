@@ -13,7 +13,7 @@ import {
   faceTexture,
 } from './face-sheet';
 import { mouthTexture } from './face-textures';
-import { type BoundRig, DANGLE_PREFIX, PROP_PREFIX, bindRig } from './rig';
+import { type BoundRig, DANGLE_PREFIX, PROP_PREFIX, bindRig, isFlatPart } from './rig';
 import { addExtrudedOutline, addOutline, getGradientMap } from './toon-material';
 
 export const JOINTS = [
@@ -198,7 +198,10 @@ export class FighterModel {
       if (!(node instanceof THREE.Mesh)) nodes.push(node);
     });
     for (const node of nodes) {
-      const buckets = new Map<string, { glow: boolean; color: number; meshes: THREE.Mesh[] }>();
+      const buckets = new Map<
+        string,
+        { glow: boolean; flat: boolean; color: number; meshes: THREE.Mesh[] }
+      >();
       for (const child of node.children) {
         if (!(child instanceof THREE.Mesh) || child.userData.outline || keep.has(child)) continue;
         if (!(child.material instanceof THREE.MeshToonMaterial)) continue;
@@ -206,13 +209,16 @@ export class FighterModel {
         if (child.children.some((c) => !c.userData.outline)) continue;
         const glow = child.material.emissiveIntensity > 1;
         const color = child.material.color.getHex();
+        // Só peças marcadas no .glb (prefixo flat:); no modelo de primitivas tudo continua igual.
+        const flat = child.userData.flat === true;
         // Partes que brilham precisam do próprio emissivo; o resto divide um material só.
-        const key = glow ? `glow:${color}` : 'base';
-        const bucket = buckets.get(key) ?? { glow, color, meshes: [] };
+        // Detalhes chapados (sem contorno) ficam num grupo à parte, também sem contorno.
+        const key = glow ? `glow:${flat ? 'flat:' : ''}${color}` : flat ? 'flat' : 'base';
+        const bucket = buckets.get(key) ?? { glow, flat, color, meshes: [] };
         bucket.meshes.push(child);
         buckets.set(key, bucket);
       }
-      for (const { glow, color, meshes } of buckets.values()) {
+      for (const { glow, flat, color, meshes } of buckets.values()) {
         if (meshes.length < 2) continue;
         const merged = new THREE.Mesh(
           mergeColored(meshes),
@@ -224,7 +230,7 @@ export class FighterModel {
           this.forgetMaterial(m.material as THREE.MeshToonMaterial);
         }
         node.add(merged);
-        addExtrudedOutline(merged, 0.022);
+        if (!flat) addExtrudedOutline(merged, 0.022);
       }
     }
   }
@@ -261,7 +267,8 @@ export class FighterModel {
       if (old.map) toon.map = old.map;
       mesh.material = toon;
       // Contorno pela normal: acompanha formas torneadas fora do centro (tronco, membros).
-      addExtrudedOutline(mesh, 0.02);
+      if (isFlatPart(mesh.name)) mesh.userData.flat = true;
+      else addExtrudedOutline(mesh, 0.02);
     }
     for (const [name, objects] of rig.props) {
       for (const o of objects) this.addProp(name as PropName, o);

@@ -17,5 +17,12 @@ export const pipocaLook: CharacterLook = {
   extras: ['potHelmet', 'scarf', 'belt'],
   emblem: 'crown',
   personality: 'knight',
+  outfit: {
+    sleeves: 'short',
+    trim: 0xf2e2c4,
+    chestPocket: true,
+    kneePatch: 0x7a6248,
+    rolledCuffs: 0x6e5a44,
+  },
   proportions: { head: 1.15, legs: 0.85 },
 };

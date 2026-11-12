@@ -16,6 +16,13 @@
       "extras": ["watch"],
       "emblem": "bolt",
       "personality": "hero",
+      "outfit": {
+        "sleeves": "short",
+        "trim": 16053492,
+        "pantsPockets": true,
+        "rolledCuffs": 4876938,
+        "shoeTrim": 4052735
+      },
       "proportions": {
         "head": 1.12,
         "legs": 0.95
@@ -37,6 +44,9 @@
       "extras": ["watch", "rocks"],
       "emblem": "bolt",
       "personality": "brute",
+      "outfit": {
+        "sleeves": "none"
+      },
       "proportions": {
         "head": 0.95,
         "arms": 1.15,
@@ -60,6 +70,13 @@
       "extras": ["watch", "glowEyes", "glowHands"],
       "emblem": "bolt",
       "personality": "hero",
+      "outfit": {
+        "sleeves": "long",
+        "trim": 16773978,
+        "stripes": 16773978,
+        "zipper": true,
+        "shoeTrim": 1981066
+      },
       "proportions": {
         "head": 1.05,
         "legs": 1.08
@@ -81,9 +98,17 @@
       "face": "sharp",
       "body": "wedge",
       "headShape": "tall",
-      "extras": ["gauntlets", "stripe"],
+      "extras": ["gauntlets"],
       "emblem": "gear",
       "personality": "cool",
+      "outfit": {
+        "sleeves": "long",
+        "trim": 16732067,
+        "openFront": 16053492,
+        "zipper": true,
+        "kneePatch": 2763316,
+        "shoeTrim": 16732067
+      },
       "proportions": {
         "legs": 1.05,
         "arms": 1.05
@@ -108,6 +133,15 @@
       "extras": ["cape"],
       "emblem": "moon",
       "personality": "mystic",
+      "outfit": {
+        "sleeves": "long",
+        "trim": 13162194,
+        "buttons": {
+          "count": 3,
+          "color": 13162194
+        },
+        "shoeTrim": 13162194
+      },
       "proportions": {
         "legs": 1.08,
         "head": 0.95
@@ -131,6 +165,13 @@
       "extras": ["cannonArm", "visor", "shoulderPads", "armor", "cap"],
       "emblem": "shield",
       "personality": "brute",
+      "outfit": {
+        "sleeves": "short",
+        "trim": 3026483,
+        "pantsPockets": true,
+        "kneePatch": 9082531,
+        "shoeTrim": 15905076
+      },
       "proportions": {
         "head": 0.9,
         "arms": 1.15,
@@ -156,6 +197,15 @@
       "extras": ["glowEyes", "glowHands", "belt"],
       "emblem": "star",
       "personality": "royal",
+      "outfit": {
+        "sleeves": "long",
+        "trim": 16763213,
+        "buttons": {
+          "count": 3,
+          "color": 16763213
+        },
+        "shoeTrim": 16763213
+      },
       "proportions": {
         "legs": 1.12,
         "head": 1.02
@@ -179,6 +229,13 @@
       "extras": ["ears", "belt"],
       "emblem": "leaf",
       "personality": "wild",
+      "outfit": {
+        "sleeves": "short",
+        "ragged": true,
+        "pantsPockets": true,
+        "kneePatch": 9074256,
+        "shoeTrim": 16765503
+      },
       "proportions": {
         "head": 1.15,
         "legs": 0.9,
@@ -204,6 +261,13 @@
       "extras": ["potHelmet", "scarf", "belt"],
       "emblem": "crown",
       "personality": "knight",
+      "outfit": {
+        "sleeves": "short",
+        "trim": 15917764,
+        "chestPocket": true,
+        "kneePatch": 8020552,
+        "rolledCuffs": 7232068
+      },
       "proportions": {
         "head": 1.15,
         "legs": 0.85
@@ -254,6 +318,12 @@
       "extras": ["snout", "roundEars", "cap"],
       "emblem": "cassette",
       "personality": "lazy",
+      "outfit": {
+        "sleeves": "short",
+        "chestPocket": true,
+        "pantsPockets": true,
+        "rolledCuffs": 5136500
+      },
       "proportions": {
         "head": 1.05,
         "legs": 0.85,
@@ -279,6 +349,13 @@
       "extras": ["headphones", "boombox"],
       "emblem": "note",
       "personality": "dancer",
+      "outfit": {
+        "sleeves": "long",
+        "trim": 16732067,
+        "zipper": true,
+        "stripes": 16732067,
+        "shoeTrim": 16732067
+      },
       "proportions": {
         "legs": 1.1,
         "head": 1.05
@@ -302,6 +379,11 @@
       "extras": ["armor", "shoulderPads", "cape", "glowEyes"],
       "emblem": "flame",
       "personality": "villain",
+      "outfit": {
+        "sleeves": "long",
+        "trim": 14034984,
+        "kneePatch": 3816010
+      },
       "proportions": {
         "head": 0.92,
         "arms": 1.12,

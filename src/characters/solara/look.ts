@@ -16,5 +16,11 @@ export const solaraLook: CharacterLook = {
   extras: ['glowEyes', 'glowHands', 'belt'],
   emblem: 'star',
   personality: 'royal',
+  outfit: {
+    sleeves: 'long',
+    trim: 0xffc94d,
+    buttons: { count: 3, color: 0xffc94d },
+    shoeTrim: 0xffc94d,
+  },
   proportions: { legs: 1.12, head: 1.02 },
 };
