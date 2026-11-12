@@ -1,4 +1,5 @@
 import './style.css';
+import { Ads, createAdProvider } from './ads/ads';
 import { App } from './app';
 import { AudioSystem } from './audio/audio';
 import { Controls } from './core/controls';
@@ -18,6 +19,22 @@ const audio = new AudioSystem();
 const app = new App(uiRoot, renderer, controls, audio);
 uiRoot.appendChild(new TouchControls(controls).el);
 registerOnline(app);
+
+// Anúncios de portal (VITE_ADS no build; vazio = nenhum). Enquanto passa, loop e som param.
+let adPlaying = false;
+app.ads = new Ads(createAdProvider(import.meta.env.VITE_ADS as string | undefined), {
+  pause: () => {
+    adPlaying = true;
+    audio.pause();
+  },
+  resume: () => {
+    adPlaying = false;
+    audio.resume();
+    // Teclas apertadas durante o anúncio não viram comando quando o jogo volta.
+    controls.syncMenu();
+  },
+});
+void app.ads.init();
 void setupXr(renderer);
 // Modelos 3D do Blender (se houver) substituem os de primitivas assim que carregam.
 void loadFighterAssets().then((count) => {
@@ -32,9 +49,15 @@ window.addEventListener('pointerdown', unlock, { once: true });
 let last = performance.now();
 startLoop(
   {
-    update: () => app.update(),
+    update: () => {
+      if (!adPlaying) app.update();
+    },
     render: (alpha) => {
       const now = performance.now();
+      if (adPlaying) {
+        last = now;
+        return;
+      }
       app.render(Math.min((now - last) / 1000, 0.1), now, alpha);
       last = now;
     },
