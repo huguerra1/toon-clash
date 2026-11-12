@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import type { CharacterLook } from '../characters/look';
+import type { BodyShape, CharacterLook } from '../characters/look';
 import { emblemTexture } from './emblems';
 import {
   type FaceOptions,
@@ -77,6 +77,17 @@ interface Dangler {
   gain: number;
 }
 
+/**
+ * Quanto os braços abrem a mais para não afundar no tronco. Na pera a barriga é mais larga que os
+ * ombros: braço caído entraria na barriga e só a luva apareceria. Só afeta braço caído; braço
+ * esticado para a frente quase não muda.
+ */
+const ARM_CLEARANCE: Partial<Record<BodyShape, number>> = { pear: 0.5 };
+
+export function armClearance(look: CharacterLook): number {
+  return ARM_CLEARANCE[look.body ?? 'standard'] ?? 0;
+}
+
 /** Modelo low-poly montado com primitivas, com "esqueleto" de grupos para animar. */
 export class FighterModel {
   readonly root = new THREE.Group();
@@ -114,6 +125,7 @@ export class FighterModel {
   private blinkFor = 0;
   private time = 0;
   private stretch = 1;
+  private readonly armOpen: number;
 
   /**
    * @param source modelo carregado de um .glb (feito no Blender). Sem ele, o lutador é montado
@@ -124,6 +136,7 @@ export class FighterModel {
     source?: THREE.Object3D,
   ) {
     this.faceOptions = faceOptionsOf(look);
+    this.armOpen = armClearance(look);
     const legs = look.proportions?.legs ?? 1;
     this.thigh = THIGH * legs;
     this.shin = SHIN * legs;
@@ -338,8 +351,8 @@ export class FighterModel {
     ] as const) {
       this.joints[joint].rotation.z = p[joint];
     }
-    this.joints.armA.rotation.x = -p.spread;
-    this.joints.armB.rotation.x = p.spread;
+    this.joints.armA.rotation.x = -(p.spread + this.armOpen);
+    this.joints.armB.rotation.x = p.spread + this.armOpen;
   }
 
   /** Assume o lugar de outro modelo (troca de forma): posição, giro e pose atuais. */
