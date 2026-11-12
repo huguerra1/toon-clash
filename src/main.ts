@@ -1,3 +1,8 @@
+// Fontes embutidas no build (SIL OFL 1.1), só o alfabeto latino: nada de pedido ao Google Fonts,
+// o que os portais de jogos e o pacote do Itch.io preferem (e funciona sem internet).
+import '@fontsource/bangers/latin-400.css';
+import '@fontsource/nunito/latin-600.css';
+import '@fontsource/nunito/latin-800.css';
 import './style.css';
 import { Ads, createAdProvider } from './ads/ads';
 import { App } from './app';
