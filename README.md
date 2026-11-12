@@ -96,5 +96,9 @@ Regras de código para humanos e agentes de IA: [AGENTS.md](AGENTS.md). Plano: [
 
 ## Aviso
 
-Projeto de fã, sem fins comerciais e sem ligação com a Cartoon Network ou a Warner Bros. Discovery.
-Todos os personagens são criações originais.
+Jogo independente. Todos os personagens, nomes e histórias são criações originais, sem ligação com
+qualquer estúdio, emissora ou franquia de desenhos animados.
+
+O código é MIT; a origem e a licença dos assets estão em
+[`public/assets/CREDITS.md`](public/assets/CREDITS.md). Plano de monetização:
+[docs/MONETIZACAO.md](docs/MONETIZACAO.md).
