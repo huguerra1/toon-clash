@@ -56,6 +56,39 @@ export interface CharacterLook {
   body?: BodyShape;
   /** Forma da cabeça no modelo do Blender. Padrão: 'round'. */
   headShape?: HeadShape;
+  /** Detalhes da roupa no modelo do Blender (mangas, barras, bolsos, zíper…). */
+  outfit?: Outfit;
+}
+
+/**
+ * Roupa de desenho: cor chapada com poucos detalhes bem escolhidos, cada um com traço de nanquim
+ * (barra, gola, punho, bolso, zíper, listra). Cores são 0xRRGGBB.
+ */
+export interface Outfit {
+  /** Mangas: curta (camiseta), comprida (jaqueta, moletom) ou sem manga. Padrão: 'short'. */
+  sleeves?: 'short' | 'long' | 'none';
+  /** Cor da gola, da barra e dos punhos (padrão: a cor da blusa, um pouco mais escura). */
+  trim?: number;
+  /** Jaqueta aberta: cor da camiseta que aparece na frente. */
+  openFront?: number;
+  /** Zíper na frente. */
+  zipper?: boolean;
+  /** Botões na frente (quantidade) e a cor deles. */
+  buttons?: { count: number; color: number };
+  /** Bolso no peito. */
+  chestPocket?: boolean;
+  /** Bolsos da calça (traço curvo na frente). */
+  pantsPockets?: boolean;
+  /** Barra da calça dobrada, com esta cor. */
+  rolledCuffs?: number;
+  /** Remendo/joelheira no joelho, com esta cor. */
+  kneePatch?: number;
+  /** Listra lateral nas mangas e na calça (agasalho esportivo), com esta cor. */
+  stripes?: number;
+  /** Barra da blusa e das mangas rasgada em zigue-zague. */
+  ragged?: boolean;
+  /** Bico e listra do tênis, com esta cor. */
+  shoeTrim?: number;
 }
 
 /**

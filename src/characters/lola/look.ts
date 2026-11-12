@@ -17,5 +17,12 @@ export const lolaLook: CharacterLook = {
   extras: ['headphones', 'boombox'],
   emblem: 'note',
   personality: 'dancer',
+  outfit: {
+    sleeves: 'long',
+    trim: 0xff4fa3,
+    zipper: true,
+    stripes: 0xff4fa3,
+    shoeTrim: 0xff4fa3,
+  },
   proportions: { legs: 1.1, head: 1.05 },
 };

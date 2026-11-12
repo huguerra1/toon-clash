@@ -17,5 +17,11 @@ export const umbraLook: CharacterLook = {
   extras: ['cape'],
   emblem: 'moon',
   personality: 'mystic',
+  outfit: {
+    sleeves: 'long',
+    trim: 0xc8d6d2,
+    buttons: { count: 3, color: 0xc8d6d2 },
+    shoeTrim: 0xc8d6d2,
+  },
   proportions: { legs: 1.08, head: 0.95 },
 };

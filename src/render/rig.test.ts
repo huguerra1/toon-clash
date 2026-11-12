@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
-import { RIG_JOINTS, bindRig } from './rig';
+import { RIG_JOINTS, bindRig, isFlatPart } from './rig';
 
 function rig(skip: string[] = [], suffix = ''): THREE.Group {
   const root = new THREE.Group();
@@ -81,5 +81,15 @@ describe('bindRig', () => {
     expect(bound.danglers).toEqual([cape]);
     expect(bound.eyes).toEqual([{ lid, pupil: null }]);
     expect(bound.mouth).toBe(mouth);
+  });
+});
+
+describe('isFlatPart', () => {
+  it('reconhece detalhes chapados pelo nome, também depois de limpos pelo carregador', () => {
+    expect(isFlatPart('flat:hemLine')).toBe(true);
+    expect(isFlatPart('flathemLine')).toBe(true);
+    expect(isFlatPart('flat:button0.001')).toBe(true);
+    expect(isFlatPart('torso')).toBe(false);
+    expect(isFlatPart('sleeve')).toBe(false);
   });
 });

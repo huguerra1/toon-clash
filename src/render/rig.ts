@@ -18,6 +18,13 @@ export type RigJoint = (typeof RIG_JOINTS)[number];
 /** Prefixos de nomes opcionais no modelo (acessórios, partes que balançam, rosto). */
 export const PROP_PREFIX = 'prop:';
 export const DANGLE_PREFIX = 'dangle:';
+/** Peça chapada, sem contorno de casca: detalhes de roupa e traços de nanquim. */
+export const FLAT_PREFIX = 'flat:';
+
+/** Detalhe colado na superfície (bolso, gola, traço): o contorno de casca faria um risco grosso em volta. */
+export function isFlatPart(name: string): boolean {
+  return baseName(name).startsWith(baseName(FLAT_PREFIX));
+}
 
 export interface BoundRig {
   hips: THREE.Object3D;

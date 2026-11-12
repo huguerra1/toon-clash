@@ -16,5 +16,10 @@ export const zhaarLook: CharacterLook = {
   extras: ['armor', 'shoulderPads', 'cape', 'glowEyes'],
   emblem: 'flame',
   personality: 'villain',
+  outfit: {
+    sleeves: 'long',
+    trim: 0xd62828,
+    kneePatch: 0x3a3a4a,
+  },
   proportions: { head: 0.92, arms: 1.12, torso: 1.1 },
 };

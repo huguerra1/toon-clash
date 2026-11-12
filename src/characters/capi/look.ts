@@ -17,5 +17,11 @@ export const capiLook: CharacterLook = {
   extras: ['snout', 'roundEars', 'cap'],
   emblem: 'cassette',
   personality: 'lazy',
+  outfit: {
+    sleeves: 'short',
+    chestPocket: true,
+    pantsPockets: true,
+    rolledCuffs: 0x4e6074,
+  },
   proportions: { head: 1.05, legs: 0.85, torso: 1.05 },
 };

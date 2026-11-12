@@ -238,6 +238,142 @@ def taper(name, r_top, r_bot, length, parent, pos, color, glow=False, segs=14, d
 
 
 # ---------------------------------------------------------------------------
+# Detalhes de roupa: preenchimentos chapados e traços de nanquim colados na superfície.
+# Levam o prefixo "flat:" — o jogo não põe contorno de casca neles (o contorno faria um risco
+# grosso e torto em volta de cada detalhe pequeno; era isso que deixava gola, barra e punhos
+# "bugados"). Quem desenha a borda é o traço de nanquim.
+# ---------------------------------------------------------------------------
+
+INK = 0x15101C
+FLAT = "flat:"
+
+
+def _sub(p, q):
+    return (p[0] - q[0], p[1] - q[1], p[2] - q[2])
+
+
+def _cross(p, q):
+    return (p[1] * q[2] - p[2] * q[1], p[2] * q[0] - p[0] * q[2], p[0] * q[1] - p[1] * q[0])
+
+
+def _norm(p):
+    n = math.sqrt(p[0] * p[0] + p[1] * p[1] + p[2] * p[2]) or 1.0
+    return (p[0] / n, p[1] / n, p[2] / n)
+
+
+def _flat_object(name, bm, parent, color, glow=False):
+    return _object(FLAT + name, bm, parent, (0, 0, 0), color, glow, smooth=True)
+
+
+def torso_at(look, t, bk, grow):
+    """Ponto (e normal) na superfície do tronco: altura u (unidades do tronco) e ângulo a
+    (0 = frente, +pi/2 = lado da câmera), afastado `off` para fora."""
+    prof = body_profile(look)
+    p, depth = prof["sq"], prof["depth"]
+    e = 2.0 / p
+
+    def at(u, a, off=0.0):
+        hw = half_width(look, u) * bk * grow
+        rx, rz = hw * depth, hw
+        c, s = math.cos(a), math.sin(a)
+        x = math.copysign(abs(c) ** e, c) * rx
+        z = math.copysign(abs(s) ** e, s) * rz
+        nx = math.copysign(abs(x / rx) ** (p - 1), x) / rx
+        nz = math.copysign(abs(z / rz) ** (p - 1), z) / rz
+        n = _norm((nx, 0.0, nz))
+        return (x + n[0] * off, u * t, z + n[2] * off), n
+
+    return at
+
+
+def limb_at(cy, half, r_top, r_bot):
+    """Ponto (e normal) num membro feito com `taper` centrado em (0, cy, 0): altura y no espaço do pai."""
+
+    def at(y, a, off=0.0):
+        k = min(1.0, max(0.0, (y - (cy - half)) / (2 * half)))
+        r = r_bot + (r_top - r_bot) * k + off
+        n = (math.cos(a), 0.0, math.sin(a))
+        return (n[0] * r, y, n[2] * r), n
+
+    return at
+
+
+def ink(name, samples, parent, width=0.013, color=INK, closed=False):
+    """Traço de nanquim: fita fina colada na superfície. `samples` = [(ponto, normal), ...]."""
+    bm = bmesh.new()
+    n = len(samples)
+    left, right = [], []
+    for i, (pt, nrm) in enumerate(samples):
+        if closed:
+            prev, nxt = samples[(i - 1) % n][0], samples[(i + 1) % n][0]
+        else:
+            prev, nxt = samples[max(i - 1, 0)][0], samples[min(i + 1, n - 1)][0]
+        side = _norm(_cross(nrm, _sub(nxt, prev)))
+        h = width / 2
+        left.append(bm.verts.new(b(pt[0] + side[0] * h, pt[1] + side[1] * h, pt[2] + side[2] * h)))
+        right.append(bm.verts.new(b(pt[0] - side[0] * h, pt[1] - side[1] * h, pt[2] - side[2] * h)))
+    for i in range(n if closed else n - 1):
+        j = (i + 1) % n
+        bm.faces.new((left[i], right[i], right[j], left[j]))
+    return _flat_object(name, bm, parent, color)
+
+
+def patch(name, at, u0, u1, a0, a1, color, parent, off, nu=4, na=8, wrap=False):
+    """Preenchimento chapado na superfície (bolso, faixa, gola, remendo)."""
+    bm = bmesh.new()
+    cols = na if wrap else na + 1
+    grid = []
+    for i in range(nu + 1):
+        u = u0 + (u1 - u0) * i / nu
+        row = []
+        for j in range(cols):
+            a = a0 + (a1 - a0) * j / na
+            row.append(bm.verts.new(b(*at(u, a, off)[0])))
+        grid.append(row)
+    for i in range(nu):
+        for j in range(na):
+            k = (j + 1) % cols
+            if not wrap and j + 1 >= cols:
+                continue
+            bm.faces.new((grid[i][j], grid[i + 1][j], grid[i + 1][k], grid[i][k]))
+    return _flat_object(name, bm, parent, color)
+
+
+def ring_line(name, at, u, parent, off, width=0.013, color=INK, segs=28):
+    """Traço que dá a volta inteira (barra, punho, gola)."""
+    return ink(name, [at(u, math.tau * i / segs, off) for i in range(segs)], parent, width, color, closed=True)
+
+
+def border(name, at, u0, u1, a0, a1, parent, off, width=0.011, steps=6):
+    """Contorno de nanquim de um retângulo na superfície (bolso, remendo)."""
+    pts = [at(u0, a0 + (a1 - a0) * i / steps, off) for i in range(steps)]
+    pts += [at(u0 + (u1 - u0) * i / steps, a1, off) for i in range(steps)]
+    pts += [at(u1, a1 - (a1 - a0) * i / steps, off) for i in range(steps)]
+    pts += [at(u1 - (u1 - u0) * i / steps, a0, off) for i in range(steps)]
+    return ink(name, pts, parent, width, closed=True)
+
+
+def zigzag(name, at, u, depth_, a0, a1, teeth, color, parent, off):
+    """Barra rasgada: dentes chapados pendurados abaixo de u, com o traço do zigue-zague."""
+    bm = bmesh.new()
+    line = []
+    for k in range(teeth):
+        a_l = a0 + (a1 - a0) * k / teeth
+        a_r = a0 + (a1 - a0) * (k + 1) / teeth
+        a_m = (a_l + a_r) / 2
+        drop = depth_ * (0.7 + 0.3 * ((k * 7) % 3) / 2)
+        p_l, p_r, p_m = at(u, a_l, off), at(u, a_r, off), at(u - drop, a_m, off)
+        # Ordem l, r, m: a face olha para fora (para a câmera).
+        bm.faces.new((bm.verts.new(b(*p_l[0])), bm.verts.new(b(*p_r[0])), bm.verts.new(b(*p_m[0]))))
+        line += [at(u, a_l, off + 0.002), at(u - drop, a_m, off + 0.002)]
+    _flat_object(name, bm, parent, color)
+    closed = abs((a1 - a0) - math.tau) < 1e-6
+    if not closed:
+        line.append(at(u, a1, off + 0.002))
+    return ink(name + "Ink", line, parent, 0.012, closed=closed)
+
+
+# ---------------------------------------------------------------------------
 # Formas (linguagem de formas de cada lutador)
 # ---------------------------------------------------------------------------
 
@@ -339,21 +475,22 @@ def build_fighter(look):
         y1, rx1, rz1 = shirt[-1]
         shirt = shirt + dome(y1, rx1, rz1, 0.05, 1, n=3)
         loft("torso", shirt, spine, (0, 0, 0), top, sq=sq, pole_top=y1 + 0.05, segs=20, subdiv=1)
-        hem_w = half_width(look, waist) * bk * 1.06
-        ring("hem", hem_w, 0.03, spine, (0, waist * t, 0), top, scale=(depth, 1, 1))
-        if shape in NECK_BODIES:
-            ring("collar", 0.1, 0.032, spine, (0, top_y * t - 0.02, 0), top)
+        build_shirt_details(look, spine, t, bk, waist, top_y, shape)
 
     front = chest_front(look, t, bk)
     empty("emblem", spine, (front + 0.012, 0.34 * t, 0))
     if "stripe" in ext:
         box("stripe", 0.05, 0.34 * t, 0.42 * bk * depth / 0.74, spine, (front - 0.01, 0.3 * t, 0), 0xF4F4F4, bevel=0.01)
     if "armor" in ext:
-        box("armor", 0.14, 0.34 * t, half_width(look, 0.34) * bk * 2.0, spine, (front - 0.03, 0.32 * t, 0), look["accent"], bevel=0.04)
+        build_breastplate(look, spine, t, bk)
     if "belt" in ext:
-        belt_w = half_width(look, 0.1) * bk * 1.07
-        ring("belt", belt_w, 0.035, spine, (0, 0.1 * t, 0), look["accent"], scale=(depth, 1, 1))
-        box("buckle", 0.04, 0.08, 0.11, spine, (belt_w * depth + 0.02, 0.1 * t, 0), 0xE8C547, bevel=0.012)
+        # Cinto chapado logo abaixo da barra (o anel de antes virava uma faixa preta grossa).
+        pelvis = torso_at(look, t, bk, 1.0)
+        u0, u1 = 0.07, 0.115
+        patch("belt", pelvis, u0, u1, 0, math.tau, look["accent"], spine, 0.012, nu=1, na=28, wrap=True)
+        ring_line("beltLow", pelvis, u0, spine, 0.014, width=0.009)
+        buckle = pelvis((u0 + u1) / 2, 0.0, 0.02)[0]
+        box("buckle", 0.03, 0.07, 0.1, spine, buckle, 0xE8C547, bevel=0.01)
     if "cape" in ext:
         pivot = empty("dangle:cape", spine, (-front - 0.02, 0.5 * t, 0))
         pivot.rotation_euler = b_rot(rz=-0.12)
@@ -366,7 +503,10 @@ def build_fighter(look):
         for i, z in enumerate((shoulder_z, -shoulder_z)):
             sphere(f"pad{i}", 0.14 * bk, spine, (0, 0.47 * t, z), top, scale=(1, 0.75, 1))
     if "scarf" in ext:
-        ring("scarf", 0.13, 0.05, spine, (0, 0.52 * t, 0), look["accent"])
+        # Cachecol: tubo gordinho justo no pescoço (o anel de antes deixava um buraco preto em volta).
+        y = 0.55 * t
+        r0, r1 = 0.074, 0.115
+        loft("scarf", [(y - 0.06, r0, r0), (y - 0.035, r1, r1), (y + 0.025, r1, r1), (y + 0.05, r0, r0)], spine, (0, 0, 0), look["accent"], segs=18, subdiv=1)
         tail = empty("dangle:scarf", spine, (-0.12, 0.5 * t, 0.08))
         tail.rotation_euler = b_rot(rz=-0.4)
         box("scarfTail", 0.06, 0.3, 0.1, tail, (0, -0.15, 0), look["accent"], bevel=0.015)
@@ -380,6 +520,124 @@ def build_fighter(look):
     build_legs(look, hips, thigh, shin_len, bk)
     build_props(look, spine)
     return root
+
+
+def outfit_of(look):
+    return look.get("outfit") or {}
+
+
+def trim_color(look):
+    """Cor de gola, barra e punho: a pedida no look ou a da blusa um pouco mais escura."""
+    return outfit_of(look).get("trim") or darker(look["top"], 0.78)
+
+
+# Afastamento dos detalhes: a malha do tronco é suavizada (subdivisão) e encolhe um pouco.
+SHIRT_OFF = 0.012
+
+
+def build_shirt_details(look, spine, t, bk, waist, top_y, shape):
+    o = outfit_of(look)
+    shirt = torso_at(look, t, bk, 1.04)
+    pelvis = torso_at(look, t, bk, 1.0)
+    trim = trim_color(look)
+    off = SHIRT_OFF
+
+    # Barra: faixa na cor de acabamento e o traço onde a blusa termina (separa blusa e calça).
+    if o.get("ragged"):
+        zigzag("hemRag", shirt, waist, 0.06, 0, math.tau, 16, look["top"], spine, off)
+    else:
+        patch("hem", shirt, waist, waist + 0.035, 0, math.tau, trim, spine, off, nu=1, na=28, wrap=True)
+        ring_line("hemLine", shirt, waist, spine, off + 0.002)
+        ring_line("hemTop", shirt, waist + 0.035, spine, off + 0.002, width=0.008)
+
+    # Gola: faixa em volta da base do pescoço, com traço na borda de cima.
+    if shape in NECK_BODIES:
+        hw = half_width(look, top_y) * bk * 1.04
+        depth = body_profile(look)["depth"]
+        y0 = top_y * t - 0.005
+        y1 = top_y * t + 0.035
+        neck = 0.082
+
+        def collar_at(u, a, off_):
+            k = (u - y0) / (y1 - y0)
+            rx = hw * depth * (1 - k) + neck * k + off_
+            rz = hw * (1 - k) + neck * k + off_
+            n = (math.cos(a), 0.0, math.sin(a))
+            return (n[0] * rx, u, n[2] * rz), n
+
+        patch("collar", collar_at, y0, y1, 0, math.tau, trim, spine, 0.004, nu=2, na=24, wrap=True)
+        ring_line("collarLine", collar_at, y1, spine, 0.006, width=0.011)
+
+    # Jaqueta aberta: faixa da camiseta de dentro, com as bordas da jaqueta em nanquim.
+    chest_top = top_y - 0.08
+    if o.get("openFront"):
+        edge = 0.34
+        patch("openFront", shirt, waist + 0.035, chest_top, -edge, edge, o["openFront"], spine, off, nu=6, na=6)
+        for i, a in enumerate((edge, -edge)):
+            ink(f"jacketEdge{i}", [shirt(waist + 0.035 + (chest_top - waist - 0.035) * k / 8, a, off + 0.003) for k in range(9)], spine, 0.014)
+    if o.get("zipper") and not o.get("openFront"):
+        a = 0.0
+        ink("zipper", [shirt(waist + 0.035 + (chest_top - waist - 0.035) * k / 8, a, off + 0.004) for k in range(9)], spine, 0.012)
+        pull = shirt(chest_top - 0.03, a, off + 0.006)[0]
+        box(FLAT + "zipPull", 0.012, 0.045, 0.025, spine, pull, trim, bevel=0.004)
+    buttons = o.get("buttons")
+    if buttons:
+        n = buttons["count"]
+        for i in range(n):
+            u = chest_top - 0.03 - (chest_top - waist - 0.1) * i / max(1, n - 1)
+            pt = shirt(u, 0.0, off)[0]
+            sphere(FLAT + f"button{i}", 0.024, spine, pt, buttons["color"], scale=(0.5, 1, 1), segs=10, rings=6)
+    if o.get("chestPocket"):
+        u0, u1, a0, a1 = 0.27, 0.38, 0.45, 0.9
+        patch("chestPocket", shirt, u0, u1, a0, a1, darker(look["top"], 0.86), spine, off, nu=2, na=4)
+        border("chestPocketInk", shirt, u0, u1, a0, a1, spine, off + 0.002)
+    if o.get("pantsPockets"):
+        for i, sgn in enumerate((1, -1)):
+            pts = []
+            for k in range(9):
+                f = k / 8
+                # Curva de bolso de calça: desce da cintura para o lado.
+                pts.append(pelvis(waist - 0.01 - 0.1 * f * f, sgn * (0.45 + 0.75 * f), 0.01))
+            ink(f"pocket{i}", pts, spine, 0.011)
+
+
+def build_breastplate(look, spine, t, bk):
+    """Peitoral curvo que acompanha o tronco (antes era uma caixa reta flutuando na frente)."""
+    shell = torso_at(look, t, bk, 1.04)
+    u0, u1, a0, a1 = 0.17, 0.5, -1.15, 1.15
+    nu, na = 6, 12
+    bm = bmesh.new()
+    outer, inner = [], []
+    for i in range(nu + 1):
+        u = u0 + (u1 - u0) * i / nu
+        # Mais grosso no meio, afinando nas bordas (forma de armadura de desenho).
+        orow, irow = [], []
+        for j in range(na + 1):
+            a = a0 + (a1 - a0) * j / na
+            edge = min(1.0, min(j, na - j) / 2.5, min(i, nu - i) / 1.5)
+            orow.append(bm.verts.new(b(*shell(u, a, 0.012 + 0.045 * edge)[0])))
+            irow.append(bm.verts.new(b(*shell(u, a, 0.0)[0])))
+        outer.append(orow)
+        inner.append(irow)
+    for i in range(nu):
+        for j in range(na):
+            bm.faces.new((outer[i][j], outer[i + 1][j], outer[i + 1][j + 1], outer[i][j + 1]))
+            bm.faces.new((inner[i][j], inner[i][j + 1], inner[i + 1][j + 1], inner[i + 1][j]))
+    # Bordas fechando a casca.
+    for i in range(nu):
+        for j in (0, na):
+            q = (outer[i][j], inner[i][j], inner[i + 1][j], outer[i + 1][j])
+            bm.faces.new(q if j == 0 else tuple(reversed(q)))
+    for j in range(na):
+        for i in (0, nu):
+            q = (outer[i][j], outer[i][j + 1], inner[i][j + 1], inner[i][j])
+            bm.faces.new(q if i == 0 else tuple(reversed(q)))
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    _object("armor", bm, spine, (0, 0, 0), look["accent"], subdiv=1)
+    # Divisão central e rebites, para ler como armadura e não como caixa.
+    ink("armorSeam", [shell(u0 + 0.03 + (u1 - u0 - 0.06) * k / 6, 0.0, 0.06) for k in range(7)], spine, 0.012)
+    for k, (u, a) in enumerate(((0.44, 0.6), (0.44, -0.6), (0.24, 0.6), (0.24, -0.6))):
+        sphere(f"{FLAT}rivet{k}", 0.018, spine, shell(u, a, 0.052)[0], darker(look["accent"], 0.7), segs=8, rings=6)
 
 
 def build_head(look, spine, t, ext):
@@ -408,7 +666,8 @@ def build_head(look, spine, t, ext):
     # Orelhas humanas: não para capuz nem para a gota (Gelatino é translúcido e mostraria por dentro).
     if not ({"ears", "roundEars", "headphones"} & ext) and look["hairStyle"] != "hood" and shape != "blob":
         for i, z in enumerate((rz - 0.01, -rz + 0.01)):
-            sphere(f"ear{i}", 0.055, head, (0.0, cy - 0.01, z), skin, scale=(0.55, 1, 0.45), segs=10, rings=8)
+            # Sem contorno: com a casca, a orelha virava um oval escuro que parecia um olho.
+            sphere(f"{FLAT}ear{i}", 0.055, head, (0.0, cy - 0.01, z), darker(skin, 0.86), scale=(0.55, 1, 0.45), segs=10, rings=8)
 
     if "visor" in ext:
         box("visor", 0.07, 0.08, 0.32 * kz, head, hp(0.235, 0.255, 0), look["accent"], glow=True, bevel=0.015)
@@ -440,8 +699,10 @@ def build_hair(look, head, hp, k, ext):
         ):
             cone(f"spike{i}", 0.09, 0.0, 0.26, head, hp(x, y, z), hair, rot=(rx, 0, rz), segs=4, smooth=False)
     elif style == "messy":
+        if "potHelmet" in ext:
+            return  # a panela cobre o cabelo; a calota aparecia como uma faixa riscada embaixo dela
         cap(0.262, hair)
-        if {"potHelmet", "cap"} & ext:
+        if "cap" in ext:
             return  # chapéu por cima: só a franja do gorro aparece
         # Franja em mechas grossas e pontudas (forma gráfica, não fio a fio).
         for i, (x, y, z, r, rx) in enumerate(
@@ -464,8 +725,17 @@ def build_hair(look, head, hp, k, ext):
 def build_headwear(look, head, ext, hp, k):
     skin = look["skin"]
     if "potHelmet" in ext:
-        cone("pot", 0.25 * k[2], 0.27 * k[2], 0.22, head, hp(-0.01, 0.4, 0), 0xB8C0C8, segs=20)
-        ring("potRim", 0.27 * k[2], 0.02, head, hp(-0.01, 0.3, 0), 0x9AA2AA)
+        cone("pot", 0.25 * k[2], 0.27 * k[2], 0.24, head, hp(-0.01, 0.39, 0), 0xB8C0C8, segs=20)
+        # Borda da panela: faixa mais escura com traço (o anel de antes deixava riscos).
+        r = 0.255 * k[2] + 0.004
+        rim_y = hp(-0.01, 0.3, 0)
+
+        def rim_at(y, a, off, r=r, cx=rim_y[0]):
+            n = (math.cos(a), 0.0, math.sin(a))
+            return (cx + n[0] * (r + off), y, n[2] * (r + off)), n
+
+        patch("potRim", rim_at, rim_y[1] - 0.005, rim_y[1] + 0.03, 0, math.tau, 0x9AA2AA, head, 0.0, nu=1, na=24, wrap=True)
+        ring_line("potRimLine", rim_at, rim_y[1] + 0.03, head, 0.002, width=0.01)
         box("potHandle", 0.3, 0.05, 0.07, head, hp(-0.3, 0.42, 0), 0x3A3A3A, rot=(0, 0, 0.15), bevel=0.015)
     if "cap" in ext:
         # Boné alto o bastante para não esconder os olhos desenhados.
@@ -493,16 +763,58 @@ def build_arms(look, spine, t, a, bk, ext, shoulder_z):
     gauntlet = "gauntlets" in ext
     glow_hands = "glowHands" in ext
     skin_color = look["accent"] if gauntlet else look["skin"]
+    o = outfit_of(look)
+    sleeves = o.get("sleeves") or "short"
+    if look.get("body") == "blob":
+        sleeves = "none"
+    top = look["top"]
+    trim = trim_color(look)
     for side, sign in (("A", 1), ("B", -1)):
         arm = empty(f"arm{side}", spine, (0, 0.45 * t, sign * shoulder_z))
         # Braço de "macarrão": grosso no ombro, fino no punho (nada de músculo desenhado).
-        taper("upperArm", 0.072 * bk, 0.056 * bk, 0.18 * a, arm, (0, -0.14 * a, 0), look["top"])
+        r_top, r_bot = 0.072 * bk, 0.056 * bk
+        up_cy, up_half = -0.14 * a, 0.09 * a
+        upper = limb_at(up_cy, up_half, r_top, r_bot)
+        taper("upperArm", r_top, r_bot, 0.18 * a, arm, (0, up_cy, 0), top if sleeves == "long" else look["skin"])
+        if sleeves == "short":
+            # Manga de camiseta: tubo um pouco mais largo que o braço, aberto embaixo, com barra.
+            y_bot, y_top = -0.165 * a, -0.04 * a
+            flare = 0.02
+            rb = upper(y_bot, 0)[0][0] + flare
+            rt = r_top + 0.016
+            rings = [(y_bot, rb, rb), (y_top, rt, rt)] + dome(y_top, rt, rt, rt, 1)
+            loft("sleeve", rings, arm, (0, 0, 0), top, segs=16, pole_top=y_top + rt, cap_bottom=True)
+
+            def sleeve_at(y, ang, off_, rb=rb, rt=rt, y_bot=y_bot, y_top=y_top):
+                k = (y - y_bot) / (y_top - y_bot)
+                r = rb + (rt - rb) * k + off_
+                n = (math.cos(ang), 0.0, math.sin(ang))
+                return (n[0] * r, y, n[2] * r), n
+
+            if o.get("ragged"):
+                zigzag("sleeveRag", sleeve_at, y_bot, 0.04, 0, math.tau, 8, top, arm, 0.004)
+            else:
+                patch("sleeveTrim", sleeve_at, y_bot, y_bot + 0.03, 0, math.tau, trim, arm, 0.004, nu=1, na=20, wrap=True)
+                ring_line("sleeveLine", sleeve_at, y_bot, arm, 0.006, width=0.011, segs=20)
+            if o.get("stripes"):
+                ink("sleeveStripe", [sleeve_at(y_bot + 0.03 + (y_top - y_bot - 0.03) * k / 5, sign * math.pi / 2, 0.005) for k in range(6)], arm, 0.026, o["stripes"])
+        elif o.get("stripes") and sleeves == "long":
+            ink("armStripe", [upper(-0.05 * a - 0.17 * a * k / 6, sign * math.pi / 2, 0.006) for k in range(7)], arm, 0.026, o["stripes"])
         fore = empty(f"fore{side}", arm, (0, -0.3 * a, 0))
-        ring("cuff", 0.072 * bk, 0.024, fore, (0, -0.02, 0), look["top"])
         if gauntlet:
             taper("forearm", 0.1, 0.07, 0.16 * a, fore, (0, -0.13 * a, 0), skin_color)
         else:
-            taper("forearm", 0.052 * bk, 0.044 * bk, 0.16 * a, fore, (0, -0.13 * a, 0), skin_color)
+            fr_top, fr_bot = 0.052 * bk, 0.044 * bk
+            fore_cy, fore_half = -0.13 * a, 0.08 * a
+            taper("forearm", fr_top, fr_bot, 0.16 * a, fore, (0, fore_cy, 0), top if sleeves == "long" else skin_color)
+            if sleeves == "long":
+                lower = limb_at(fore_cy, fore_half, fr_top, fr_bot)
+                y_w = fore_cy - fore_half - 0.01
+                # Punho da manga comprida: faixa de acabamento, um pouco mais larga que o braço.
+                patch("wristTrim", lower, y_w, y_w + 0.045, 0, math.tau, trim, fore, 0.008, nu=1, na=20, wrap=True)
+                ring_line("wristLine", lower, y_w + 0.045, fore, 0.01, width=0.01, segs=20)
+                if o.get("stripes"):
+                    ink("foreStripe", [lower(fore_cy + fore_half - (2 * fore_half - 0.04) * k / 5, sign * math.pi / 2, 0.006) for k in range(6)], fore, 0.024, o["stripes"])
         hand = empty("hand", fore, (0, -0.31 * a, 0))
         # Luva de desenho: mão grande, punho fechado com 3 dedos e polegar.
         size = 0.13 if gauntlet else 0.108 * bk
@@ -521,16 +833,41 @@ def build_arms(look, spine, t, a, bk, ext, shoulder_z):
 
 def build_legs(look, hips, thigh, shin_len, bk):
     shape = look.get("body") or "standard"
+    o = outfit_of(look)
     gap = {"pear": 0.14, "block": 0.13, "blob": 0.13}.get(shape, 0.105) * bk
     for side, sign in (("A", 1), ("B", -1)):
         leg = empty(f"leg{side}", hips, (0, -0.02, sign * gap))
-        taper("thigh", 0.095 * bk, 0.078 * bk, thigh - 0.17, leg, (0, -thigh / 2, 0), look["bottom"])
+        th_top, th_bot = 0.095 * bk, 0.078 * bk
+        th_cy, th_half = -thigh / 2, (thigh - 0.17) / 2
+        taper("thigh", th_top, th_bot, thigh - 0.17, leg, (0, th_cy, 0), look["bottom"])
+        thigh_at = limb_at(th_cy, th_half, th_top, th_bot)
         shin = empty(f"shin{side}", leg, (0, -thigh, 0))
-        taper("calf", 0.074 * bk, 0.062 * bk, shin_len - 0.15, shin, (0, -shin_len / 2 + 0.02, 0), look["bottom"])
-        ring("pantsCuff", 0.07 * bk, 0.024, shin, (0, -shin_len + 0.07, 0), look["bottom"])
-        # Tênis de desenho: grande e redondo, bico levantado, sola clara e cadarço.
+        ca_top, ca_bot = 0.074 * bk, 0.062 * bk
+        ca_cy, ca_half = -shin_len / 2 + 0.02, (shin_len - 0.15) / 2
+        taper("calf", ca_top, ca_bot, shin_len - 0.15, shin, (0, ca_cy, 0), look["bottom"])
+        calf_at = limb_at(ca_cy, ca_half, ca_top, ca_bot)
+        if o.get("rolledCuffs"):
+            # Barra dobrada: anel largo (entra na silhueta) com traço na dobra.
+            y0, y1 = -shin_len + 0.06, -shin_len + 0.125
+            r = ca_bot + 0.022
+            loft("rolledCuff", [(y0, r, r), (y1, r, r)], shin, (0, 0, 0), o["rolledCuffs"], segs=18, cap_bottom=True, cap_top=True)
+
+            def cuff_at(y, ang, off_, r=r):
+                n = (math.cos(ang), 0.0, math.sin(ang))
+                return (n[0] * (r + off_), y, n[2] * (r + off_)), n
+
+            ring_line("cuffFold", cuff_at, (y0 + y1) / 2, shin, 0.004, width=0.009, segs=20)
+        if o.get("kneePatch"):
+            y0, y1 = th_cy - th_half + 0.01, th_cy - th_half + 0.1
+            patch("kneePatch", thigh_at, y0, y1, -0.75, 0.75, o["kneePatch"], leg, 0.006, nu=2, na=6)
+            border("kneePatchInk", thigh_at, y0, y1, -0.75, 0.75, leg, 0.008, width=0.01, steps=4)
+        if o.get("stripes"):
+            ang = sign * math.pi / 2
+            ink("legStripe", [thigh_at(th_cy + th_half - 2 * th_half * k / 6, ang, 0.006) for k in range(7)], leg, 0.028, o["stripes"])
+            ink("shinStripe", [calf_at(ca_cy + ca_half - (2 * ca_half - 0.05) * k / 6, ang, 0.006) for k in range(7)], shin, 0.026, o["stripes"])
+        # Tênis de desenho: grande e redondo, bico levantado (em outra cor), sola clara e cadarço.
         box("shoe", 0.28, 0.12, 0.17 * bk, shin, (0.06, -shin_len - 0.005, 0), look["shoes"], bevel=0.045)
-        sphere("toe", 0.095 * bk, shin, (0.19, -shin_len - 0.015, 0), look["shoes"], scale=(1.05, 0.72, 0.95))
+        sphere("toe", 0.095 * bk, shin, (0.19, -shin_len - 0.015, 0), o.get("shoeTrim") or look["shoes"], scale=(1.05, 0.72, 0.95))
         box("sole", 0.36, 0.035, 0.18 * bk, shin, (0.08, -shin_len - 0.07, 0), 0xF2F2F2, bevel=0.012)
         box("laces", 0.09, 0.015, 0.09 * bk, shin, (0.09, -shin_len + 0.055, 0), 0xF2F2F2, bevel=0.005)
         cone("prop:jets", 0.08, 0.0, 0.3, shin, (0, -shin_len - 0.2, 0), 0xFF9A2E, glow=True, rot=(0, 0, math.pi), segs=10)

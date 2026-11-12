@@ -14,8 +14,16 @@ export const nyxLook: CharacterLook = {
   face: 'sharp',
   body: 'wedge',
   headShape: 'tall',
-  extras: ['gauntlets', 'stripe'],
+  extras: ['gauntlets'],
   emblem: 'gear',
   personality: 'cool',
+  outfit: {
+    sleeves: 'long',
+    trim: 0xff4fa3,
+    openFront: 0xf4f4f4,
+    zipper: true,
+    kneePatch: 0x2a2a34,
+    shoeTrim: 0xff4fa3,
+  },
   proportions: { legs: 1.05, arms: 1.05 },
 };
