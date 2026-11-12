@@ -37,6 +37,7 @@ import {
   cycleOption,
 } from './ui/accessibility';
 import { Menu, type MenuItem } from './ui/menu';
+import { supportButton, supportLink } from './ui/support';
 import { PerfMeter } from './ui/perf-meter';
 import { fighterPortrait } from './render/portraits';
 import { BUTTON_NAMES, moveList } from './ui/notation';
@@ -281,6 +282,13 @@ export class App {
        <p class="tagline">Lutadores originais inspirados nos desenhos dos anos 2000</p>
        <p class="blink">Aperte ENTER ou toque para começar</p>`,
     );
+    // Link de apoio (Ko-fi, LivePix…) só quando configurado no build: veja .env.example.
+    const support = supportLink({
+      VITE_SUPPORT_URL: import.meta.env.VITE_SUPPORT_URL as string | undefined,
+      VITE_SUPPORT_LABEL: import.meta.env.VITE_SUPPORT_LABEL as string | undefined,
+      VITE_ADS: import.meta.env.VITE_ADS as string | undefined,
+    });
+    if (support) el.appendChild(supportButton(support));
     el.addEventListener('click', () => this.show(this.mainMenu()));
     return {
       el,
