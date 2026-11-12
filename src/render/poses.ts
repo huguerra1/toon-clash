@@ -110,13 +110,16 @@ function guard(time: number, personality?: Personality): Pose {
       });
     }
     case 'villain':
+      // Punhos à frente, cotovelos abertos: com o cotovelo muito dobrado as luvas grandes
+      // cobriam o rosto e o antebraço sumia dentro do peito largo e das ombreiras.
       return pose(base, {
         spine: -0.06,
         head: 0.08,
-        armA: 0.9,
-        foreA: 2.3,
-        armB: 0.85,
-        foreB: 2.4,
+        armA: 0.6,
+        foreA: 1.5,
+        armB: 0.35,
+        foreB: 1.7,
+        spread: 0.2,
         legA: 0.18,
         legB: -0.18,
       });
