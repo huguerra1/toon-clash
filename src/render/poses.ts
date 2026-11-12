@@ -480,6 +480,27 @@ export function strikeTimeline(
   return k < 0.25 ? hit : mixPose(hit, base, easeOut((k - 0.25) / 0.75));
 }
 
+/**
+ * Passo de andar sobre a guarda. `s` é o seno da fase do passo. Os braços balançam ao contrário
+ * da perna do mesmo lado (sem perder a guarda), o cotovelo dobra mais quando o braço vai para
+ * trás e o tronco gira junto com o ombro que vem à frente. Exportado para teste.
+ */
+export function walkPose(base: Pose, s: number): Pose {
+  return pose(base, {
+    legA: 0.1 + s * 0.45,
+    legB: -0.1 - s * 0.45,
+    shinA: -0.2 - Math.max(0, -s) * 0.7,
+    shinB: -0.2 - Math.max(0, s) * 0.7,
+    hipsY: -0.04 + Math.abs(s) * 0.03,
+    armA: base.armA - s * 0.38,
+    armB: base.armB + s * 0.38,
+    foreA: base.foreA + s * 0.2,
+    foreB: base.foreB - s * 0.2,
+    twist: base.twist - s * 0.14,
+    head: base.head + Math.abs(s) * 0.04,
+  });
+}
+
 /** Pose alvo do lutador neste quadro e a velocidade com que o modelo deve chegar nela. */
 export function targetPose(
   f: FighterState,
@@ -497,17 +518,7 @@ export function targetPose(
     case 'walk': {
       const forward = Math.sign(f.vx) === f.facing ? 1 : -1;
       const phase = (walkPhase ?? time * 10) * forward;
-      const s = Math.sin(phase);
-      return {
-        pose: pose(guard(time, personality), {
-          legA: 0.1 + s * 0.45,
-          legB: -0.1 - s * 0.45,
-          shinA: -0.2 - Math.max(0, -s) * 0.7,
-          shinB: -0.2 - Math.max(0, s) * 0.7,
-          hipsY: -0.04 + Math.abs(s) * 0.03,
-        }),
-        rate: 0.35,
-      };
+      return { pose: walkPose(guard(time, personality), Math.sin(phase)), rate: 0.35 };
     }
     case 'crouch':
       return { pose: crouch(), rate: 0.4 };
